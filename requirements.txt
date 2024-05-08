@@ -1,2 +1,5 @@
 python-telegram-bot==21.1.1
 requests==2.31.0
+certifi
+tornado>=5.1
+cryptography

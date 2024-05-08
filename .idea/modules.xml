@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/realtCommissionBot.iml" filepath="$PROJECT_DIR$/.idea/realtCommissionBot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../realt_commission_bot/.idea/realt_commission_bot.iml" filepath="$PROJECT_DIR$/../realt_commission_bot/.idea/realt_commission_bot.iml" />
     </modules>
   </component>
 </project>
