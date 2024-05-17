@@ -39,6 +39,6 @@ class CommissionCalculator:
         self.USD_rate = CurrencyService().get_dollar_rate_for_today()
         self.object_cost_in_BYN = self.object_cost_in_USD * self.USD_rate
         self.object_cost_in_basic_value = math.ceil(self.object_cost_in_BYN / self.BASIC_VALUE_IN_BYN)
-        commission = CostTaxService().get_commission(self.object_cost_in_basic_value)
-        self.tax_cost_in_BYN = self.object_cost_in_BYN * commission / 100
-        self.tax_cost_in_USD = self.object_cost_in_USD * commission / 100
+        self.commission = CostTaxService().get_commission(self.object_cost_in_basic_value)
+        self.tax_cost_in_BYN = self.object_cost_in_BYN * self.commission / 100
+        self.tax_cost_in_USD = self.object_cost_in_USD * self.commission / 100
