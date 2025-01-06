@@ -3,6 +3,7 @@ import math
 import exceptions
 from api.constants.commission_table import start_end_cost_commission_table_in_BASIC_VALUE
 from api.services.currency import CurrencyService
+from services.basic_value_extractor import get_basic_value
 
 
 class CostTaxService:
@@ -20,12 +21,11 @@ class CostTaxService:
 
 
 class CommissionCalculator:
-    BASIC_VALUE_IN_BYN = 40
-
     def __init__(self, object_cost):
         self._validation(object_cost)
 
         self.object_cost_in_USD = int(object_cost)
+        self.basic_value_in_BYN = get_basic_value()
         self._calculate()
 
     @staticmethod
@@ -38,7 +38,7 @@ class CommissionCalculator:
     def _calculate(self):
         self.USD_rate = CurrencyService().get_dollar_rate_for_today()
         self.object_cost_in_BYN = self.object_cost_in_USD * self.USD_rate
-        self.object_cost_in_basic_value = math.ceil(self.object_cost_in_BYN / self.BASIC_VALUE_IN_BYN)
+        self.object_cost_in_basic_value = math.ceil(self.object_cost_in_BYN / self.basic_value_in_BYN)
         self.commission = CostTaxService().get_commission(self.object_cost_in_basic_value)
         self.tax_cost_in_BYN = self.object_cost_in_BYN * self.commission / 100
         self.tax_cost_in_USD = self.object_cost_in_USD * self.commission / 100

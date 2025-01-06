@@ -63,7 +63,7 @@ def calculate_commission(query):
     text = (f"Object cost (USD):\t<b>{round_number(commission.object_cost_in_USD)}$</b>\n"
             f"USD rate:\t<b>{round_number(commission.USD_rate)}$</b>\n"
             f"Object cost (BYN):\t<b>{round_number(commission.object_cost_in_BYN)}</b>\n"
-            f"Basic Value (BYN):\t<b>{round_number(commission.BASIC_VALUE_IN_BYN)}</b>\n"
+            f"Basic Value (BYN):\t<b>{round_number(commission.basic_value_in_BYN)}</b>\n"
             f"Object cost in Basic Value (BV):\t<b>{round_number(commission.object_cost_in_basic_value)}</b>\n"
             f"Commission (%):\t<b>{round_number(commission.commission)}%</b>\n"
             f"Tax cost (BYN):\t<b>{round_number(commission.tax_cost_in_BYN)}</b>\n"
