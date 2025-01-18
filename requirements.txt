@@ -5,3 +5,4 @@ certifi
 tornado>=5.1
 cryptography
 beautifulsoup4==4.12.3
+urllib3==2.3.0
