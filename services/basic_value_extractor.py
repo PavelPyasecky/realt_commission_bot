@@ -1,5 +1,5 @@
 import logging
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
@@ -14,7 +14,7 @@ URL = 'https://etalonline.by/spravochnaya-informatsiya/u01405001/'
 def get_soup_of_the_page(url):
     try:
         page = urlopen(url)
-    except HTTPError as e:
+    except (HTTPError, URLError, TimeoutError, ConnectionError) as e:
         logger.error('HTTP error occurred: %s', e)
         return None
 
