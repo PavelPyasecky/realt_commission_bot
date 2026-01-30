@@ -124,7 +124,7 @@ jobs:
             fi
 
             echo "Waiting for $SERVICE_NAME to stabilize..."
-            for i in {1..15}; do
+            for i in {1..5}; do
               STATE=\$(docker compose -f $DOCKER_COMPOSE_FILE ps -q $SERVICE_NAME | xargs docker inspect -f '{{.State.Status}}' 2>/dev/null || echo "unknown")
               
               if [ "\$STATE" = "exited" ] || [ "\$STATE" = "dead" ]; then
@@ -133,7 +133,7 @@ jobs:
               fi
               
               if [ "\$STATE" = "running" ]; then
-                echo "Service is running... check \$i/15"
+                echo "Service is running... check \$i/5"
               fi
               sleep 2
             done
