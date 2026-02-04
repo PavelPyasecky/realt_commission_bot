@@ -1,23 +1,13 @@
-from pydantic import PostgresDsn, RedisDsn, SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from pathlib import Path
+import os
 
 
-DOTENV_PATH: Final = Path(__file__).parent.parent / ".env"
+class Settings:
+    def __init__(self):
+        self.TELEGRAM_ACCESS_TOKEN = os.environ.get("TELEGRAM_ACCESS_TOKEN", "")
+        self.DB_DSN = os.environ.get("DB_DSN", "")
+        self.REDIS_URL = os.environ.get("REDIS_URL", "")
+        self.BASIC_VALUE_BYN = float(os.environ.get("BASIC_VALUE_BYN", "0"))
+        self.ADMIN_CHAT_ID = int(os.environ.get("ADMIN_CHAT_ID", "0"))
 
-class Settings(BaseSettings):
-    TELEGRAM_ACCESS_TOKEN: SecretStr
-
-    DB_DSN: PostgresDsn
-
-    # Business Logic
-    BASIC_VALUE_BYN: int
-
-    model_config = SettingsConfigDict(
-        env_file=str(DOTENV_PATH),
-        env_file_encoding="utf-8",
-        extra="ignore"
-    )
 
 config = Settings()
