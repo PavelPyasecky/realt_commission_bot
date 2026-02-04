@@ -6,6 +6,7 @@ from app.services.basic_value_extractor import get_basic_value
 from app.services.commission_table import get_commission_percent
 from app.services.currency import CurrencyService
 from app.services.rounding import round_number
+from app.i18n import get_translator
 
 
 class CommissionCalculator:
@@ -52,22 +53,23 @@ class CommissionCalculator:
         )
 
     def format_html(self):
+        _ = get_translator()
         return (
-            "Object cost (USD):\t<b>"
+            f"{_('Object cost (USD):')} <b>"
             f"{round_number(self.object_cost_in_USD)}$</b>\n"
-            "USD rate:\t<b>"
+            f"{_('USD rate:')} <b>"
             f"{round_number(self.USD_rate)}$</b>\n"
-            "Object cost (BYN):\t<b>"
+            f"{_('Object cost (BYN):')} <b>"
             f"{round_number(self.object_cost_in_BYN)}</b>\n"
-            "Basic Value (BYN):\t<b>"
+            f"{_('Basic Value (BYN):')} <b>"
             f"{round_number(self.basic_value_in_BYN)}</b>\n"
-            "Object cost in Basic Value (BV):\t<b>"
+            f"{_('Object cost in basic values:')} <b>"
             f"{round_number(self.object_cost_in_basic_value)}</b>\n"
-            "Commission (%):\t<b>"
+            f"{_('Commission rate:')} <b>"
             f"{round_number(self.commission)}%</b>\n"
-            "Tax cost (BYN):\t<b>"
+            f"{_('Tax (BYN):')} <b>"
             f"{round_number(self.tax_cost_in_BYN)}</b>\n"
-            "Tax cost (USD):\t<b>"
+            f"{_('Tax (USD):')} <b>"
             f"{round_number(self.tax_cost_in_USD)}$</b>\n"
         )
 

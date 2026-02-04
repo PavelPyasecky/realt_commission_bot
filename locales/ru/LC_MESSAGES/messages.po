@@ -1,0 +1,70 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ru\n"
+
+msgid "Object cost (USD):"
+msgstr "Стоимость объекта (USD):"
+
+msgid "USD rate:"
+msgstr "Курс USD:"
+
+msgid "Object cost (BYN):"
+msgstr "Стоимость объекта (BYN):"
+
+msgid "Basic Value (BYN):"
+msgstr "Базовая величина (BYN):"
+
+msgid "Object cost in basic values:"
+msgstr "Стоимость в базовых величинах:"
+
+msgid "Commission rate:"
+msgstr "Ставка комиссии:"
+
+msgid "Tax (BYN):"
+msgstr "Налог (BYN):"
+
+msgid "Tax (USD):"
+msgstr "Налог (USD):"
+
+msgid "Commission calculation"
+msgstr "Расчет комиссии"
+
+msgid "DAU"
+msgstr "DAU"
+
+msgid "WAU"
+msgstr "WAU"
+
+msgid "MAU"
+msgstr "MAU"
+
+msgid "All unique"
+msgstr "Всего уникальных"
+
+msgid "Please enter the property price in USD."
+msgstr "Введите стоимость объекта в USD."
+
+msgid "Please enter a number in USD."
+msgstr "Введите число в USD."
+
+msgid "Payments are not available yet."
+msgstr "Оплата пока недоступна."
+
+msgid "Sorry, I didn't understand that command."
+msgstr "Команда не распознана."
+
+msgid "Access denied."
+msgstr "Доступ запрещен."
+
+msgid "Statistics"
+msgstr "Статистика"
+
+msgid "Active in last 24 hours"
+msgstr "Активные за 24 часа"
+
+msgid "Active in last 7 days"
+msgstr "Активные за 7 дней"
+
+msgid "Active in last 30 days"
+msgstr "Активные за 30 дней"

@@ -14,4 +14,6 @@ RUN uv sync --frozen --no-dev
 
 COPY . .
 
+RUN python -m app.tools.compilemessages
+
 CMD ["python", "-m", "app.main"]

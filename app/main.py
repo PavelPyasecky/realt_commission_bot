@@ -66,7 +66,7 @@ async def lifespan(app_ctx):
     
     logger.info(f"Connecting to DB: {app_ctx.db_dsn.split('@')[-1]}")
     logger.info(f"Base Value configured as: {app_ctx.config.BASIC_VALUE_BYN} BYN")
-    logger.info(f"Admin Chat ID configured as: {app_ctx.config.ADMIN_CHAT_ID}")
+    logger.info(f"Admin IDs configured as: {app_ctx.config.ADMIN_ID}")
 
     async with app_ctx.engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
