@@ -17,6 +17,11 @@ async def calculate(message):
     except exceptions.InputError:
         await message.answer(_("Please enter a number in USD."))
         return
+    except exceptions.CurrencyUnavailableError:
+        await message.answer(
+            _("USD rate is temporarily unavailable. Please try again in a minute.")
+        )
+        return
     await message.answer(calculator.format_html())
 
 
