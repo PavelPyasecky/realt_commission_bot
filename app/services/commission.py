@@ -54,23 +54,28 @@ class CommissionCalculator:
 
     def format_html(self):
         _ = get_translator()
+        tax_usd = _format_amount(self.tax_cost_in_USD) + "$"
+        tax_byn = _format_amount(self.tax_cost_in_BYN)
+        object_usd = _format_amount(self.object_cost_in_USD) + "$"
+        usd_rate = _format_amount(self.USD_rate)
+        object_byn = _format_amount(self.object_cost_in_BYN)
+        basic_value = _format_amount(self.basic_value_in_BYN)
+        object_in_basic = _format_amount(self.object_cost_in_basic_value, digits=0)
+        commission = _format_amount(self.commission)
         return (
-            f"{_('Object cost (USD):')} <b>"
-            f"{round_number(self.object_cost_in_USD)}$</b>\n"
-            f"{_('USD rate:')} <b>"
-            f"{round_number(self.USD_rate)}$</b>\n"
-            f"{_('Object cost (BYN):')} <b>"
-            f"{round_number(self.object_cost_in_BYN)}</b>\n"
-            f"{_('Basic Value (BYN):')} <b>"
-            f"{round_number(self.basic_value_in_BYN)}</b>\n"
-            f"{_('Object cost in basic values:')} <b>"
-            f"{round_number(self.object_cost_in_basic_value)}</b>\n"
-            f"{_('Commission rate:')} <b>"
-            f"{round_number(self.commission)}%</b>\n"
-            f"{_('Tax (BYN):')} <b>"
-            f"{round_number(self.tax_cost_in_BYN)}</b>\n"
-            f"{_('Tax (USD):')} <b>"
-            f"{round_number(self.tax_cost_in_USD)}$</b>\n"
+            f"<b>{_('Calculation result')}</b>\n"
+            f"{_('Tax (USD):')} <b>{tax_usd}</b>\n"
+            f"{_('Tax (BYN):')} <b>{tax_byn}</b>\n"
+            "\n"
+            f"<b>{_('Calculation details')}</b>\n"
+            f"{_('Object cost (USD):')} <b>{object_usd}</b>\n"
+            f"{_('USD rate:')} <b>{usd_rate}</b>\n"
+            f"{_('Object cost (BYN):')} <b>{object_byn}</b>\n"
+            f"{_('Basic Value (BYN):')} <b>{basic_value}</b>\n"
+            f"{_('Object cost in basic values:')} <b>{object_in_basic}</b>\n"
+            f"{_('Commission rate:')} <b>{commission}%</b>\n"
+            "\n"
+            f"<i>{_('Formula')}: {tax_usd} = {object_usd} x {commission}%</i>"
         )
 
 
@@ -78,3 +83,11 @@ def _validation(query_string):
     if query_string.isnumeric():
         return
     raise exceptions.InputError
+
+
+def _format_amount(value, digits=2):
+    text = round_number(value, digits=digits)
+    if "." in text:
+        integer, fraction = text.split(".", maxsplit=1)
+        return f"{int(integer):,}".replace(",", " ") + f".{fraction}"
+    return f"{int(text):,}".replace(",", " ")

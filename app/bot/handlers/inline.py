@@ -6,7 +6,6 @@ from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessag
 
 from app.services import exceptions
 from app.services.commission import CommissionCalculator
-from app.services.rounding import round_number
 from app.i18n import get_translator
 
 
@@ -22,7 +21,8 @@ async def inline_commission(inline_query):
 
     _ = get_translator()
     description = (
-        f"{_('Tax (USD):')} {round_number(calculator.tax_cost_in_USD)}$"
+        f"{_('Tax (USD):')} {calculator.tax_cost_in_USD:.2f}$ | "
+        f"{_('Commission rate:')} {calculator.commission:.2f}%"
     )
     result = InlineQueryResultArticle(
         id=str(uuid4()),

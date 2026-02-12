@@ -27,6 +27,15 @@ msgstr "Налог (BYN):"
 msgid "Tax (USD):"
 msgstr "Налог (USD):"
 
+msgid "Calculation result"
+msgstr "Результат расчета"
+
+msgid "Calculation details"
+msgstr "Детали расчета"
+
+msgid "Formula"
+msgstr "Формула"
+
 msgid "Commission calculation"
 msgstr "Расчет комиссии"
 
