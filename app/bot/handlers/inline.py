@@ -6,13 +6,14 @@ from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessag
 
 from app.services import exceptions
 from app.services.commission import CommissionCalculator
+from app.services.rounding import round_fixed
 from app.i18n import get_translator
 
 
 router = Router()
 
 
-@router.inline_query(F.query.regexp(r"^\d+$"))
+@router.inline_query(F.query)
 async def inline_commission(inline_query):
     try:
         calculator = await CommissionCalculator.from_query(inline_query.query)
@@ -21,15 +22,15 @@ async def inline_commission(inline_query):
 
     _ = get_translator()
     description = (
-        f"{_('Tax (USD):')} {calculator.tax_cost_in_USD:.2f}$ | "
-        f"{_('Commission rate:')} {calculator.commission:.2f}%"
+        f"{_('Tax (USD):')} {round_fixed(calculator.tax_cost_in_USD)}$ | "
+        f"{_('Commission rate:')} {round_fixed(calculator.commission)}%"
     )
     result = InlineQueryResultArticle(
         id=str(uuid4()),
         title=_("Commission calculation"),
         description=description,
         input_message_content=InputTextMessageContent(
-            message_text=calculator.format_html(),
+            message_text=calculator.format_detailed_html(),
             parse_mode=ParseMode.HTML,
         ),
     )

@@ -36,8 +36,59 @@ msgstr "Детали расчета"
 msgid "Formula"
 msgstr "Формула"
 
+msgid "Enter new amount hint"
+msgstr "Введите новую сумму в USD, чтобы пересчитать."
+
 msgid "Commission calculation"
 msgstr "Расчет комиссии"
+
+msgid "Calculate commission"
+msgstr "🧮 Рассчитать комиссию"
+
+msgid "Last calculation"
+msgstr "🕘 Последний расчет"
+
+msgid "Favorites"
+msgstr "⭐ Избранное"
+
+msgid "Compare scenarios"
+msgstr "📈 Сравнить сценарии"
+
+msgid "Short"
+msgstr "Коротко"
+
+msgid "Detailed"
+msgstr "Подробно"
+
+msgid "Add to favorites"
+msgstr "⭐ В избранное"
+
+msgid "Compare"
+msgstr "Сравнить"
+
+msgid "Share"
+msgstr "Поделиться"
+
+msgid "New calculation"
+msgstr "Новый расчет"
+
+msgid "Input format help"
+msgstr "Введите стоимость в USD. Примеры: 125000, 125 000, 125k."
+
+msgid "No last calculation yet"
+msgstr "Пока нет последнего расчета."
+
+msgid "No favorites yet"
+msgstr "Пока нет избранных расчетов."
+
+msgid "Added to favorites"
+msgstr "Добавлено в избранное"
+
+msgid "Comparison scenarios"
+msgstr "Сценарии сравнения"
+
+msgid "Welcome message"
+msgstr "Привет! Я помогу быстро рассчитать налог агента.\n\nВведите стоимость объекта в USD (например, 125000 или 125k) или выберите действие ниже."
 
 msgid "DAU"
 msgstr "DAU"
