@@ -8,7 +8,7 @@ def round_half_up(value, digits=2):
 
 def round_number(value, digits=2):
     rounded = round_half_up(value, digits=digits)
-    if rounded.is_integer():
+    if rounded == rounded.to_integral_value():
         return str(int(rounded))
     return f"{rounded:.{digits}f}"
 
