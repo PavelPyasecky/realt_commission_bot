@@ -127,7 +127,7 @@ async def calculation_actions(callback):
         await callback.answer()
         return
 
-    _, action, amount_token = payload
+    _prefix, action, amount_token = payload
     amount = _token_to_amount(amount_token)
     user_id = callback.from_user.id
 
