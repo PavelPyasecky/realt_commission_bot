@@ -7,9 +7,8 @@ celery_app = Celery(
     "realt_commission_bot",
     broker=str(config.REDIS_URL),
     backend=str(config.REDIS_URL),
+    include=["app.tasks.currency"],
 )
-
-celery_app.autodiscover_tasks(["app.tasks"])
 
 celery_app.conf.beat_schedule = {
     "update_usd_rate_every_4_hours": {

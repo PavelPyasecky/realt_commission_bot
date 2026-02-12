@@ -61,7 +61,7 @@ async def lifespan(app_ctx):
         if await redis_client.get("currency:usd") is None:
             await asyncio.to_thread(update_usd_rate)
     finally:
-        await redis_client.close()
+        await redis_client.aclose()
         await redis_client.connection_pool.disconnect()
     
     logger.info(f"Connecting to DB: {app_ctx.db_dsn.split('@')[-1]}")

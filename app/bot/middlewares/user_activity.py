@@ -1,6 +1,11 @@
+import logging
+
 from aiogram import BaseMiddleware
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.infrastructure.repositories.user_repository import UserRepository
+
+logger = logging.getLogger(__name__)
 
 
 class UserActivityMiddleware(BaseMiddleware):
@@ -12,5 +17,9 @@ class UserActivityMiddleware(BaseMiddleware):
         user = data.get("event_from_user")
         if sessionmaker and user:
             async with sessionmaker() as session:
-                await self.user_repository.touch_user(session, user.id)
+                try:
+                    await self.user_repository.touch_user(session, user.id)
+                except SQLAlchemyError:
+                    # Do not break update handling if activity tracking fails.
+                    logger.exception("Failed to touch user activity")
         return await handler(event, data)
