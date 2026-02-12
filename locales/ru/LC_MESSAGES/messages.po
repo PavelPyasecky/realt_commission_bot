@@ -52,7 +52,7 @@ msgid "Favorites"
 msgstr "⭐ Избранное"
 
 msgid "Compare scenarios"
-msgstr "📈 Сравнить сценарии"
+msgstr "📈 Показать сценарии"
 
 msgid "Short"
 msgstr "Коротко"
@@ -64,7 +64,7 @@ msgid "Add to favorites"
 msgstr "⭐ В избранное"
 
 msgid "Compare"
-msgstr "Сравнить"
+msgstr "Показать сценарии"
 
 msgid "Share"
 msgstr "Поделиться"
