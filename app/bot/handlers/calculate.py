@@ -29,8 +29,8 @@ def _comparison_amounts(base_amount):
     return [base_amount * 0.8, base_amount, base_amount * 1.2]
 
 
-def _is_admin(user_id):
-    return user_id in config.ADMIN_ID
+def _is_admin(chat_id=None, user_id=None):
+    return chat_id in config.ADMIN_ID or user_id in config.ADMIN_ID
 
 
 async def _send_comparison_message(message, base_amount, _):
@@ -43,12 +43,19 @@ async def _send_comparison_message(message, base_amount, _):
         )
     lines.append("")
     lines.append(_("Enter new amount hint"))
-    is_admin = message.from_user and _is_admin(message.from_user.id)
+    is_admin = _is_admin(
+        chat_id=message.chat.id if message.chat else None,
+        user_id=message.from_user.id if message.from_user else None,
+    )
     await message.answer("\n".join(lines), reply_markup=build_main_keyboard(_, is_admin=is_admin))
 
 
 async def _send_stats_message(message, sessionmaker, _):
-    if not message.from_user or not _is_admin(message.from_user.id):
+    is_admin = _is_admin(
+        chat_id=message.chat.id if message.chat else None,
+        user_id=message.from_user.id if message.from_user else None,
+    )
+    if not is_admin:
         await message.answer(_("Access denied."))
         return
 
@@ -62,7 +69,6 @@ async def _send_stats_message(message, sessionmaker, _):
         f"MAU — {_('Active in last 30 days')}: {stats_data['mau']}\n"
         f"{_('All unique')}: {stats_data['total']}\n"
     )
-    is_admin = message.from_user and _is_admin(message.from_user.id)
     await message.answer(text, reply_markup=build_main_keyboard(_, is_admin=is_admin))
 
 
@@ -100,7 +106,10 @@ async def compare_command(message):
 async def calculate(message, sessionmaker):
     _ = get_translator()
     text = (message.text or "").strip()
-    is_admin = message.from_user and _is_admin(message.from_user.id)
+    is_admin = _is_admin(
+        chat_id=message.chat.id if message.chat else None,
+        user_id=message.from_user.id if message.from_user else None,
+    )
 
     if text == _("Calculate commission"):
         await message.answer(
@@ -153,7 +162,10 @@ async def calculation_actions(callback):
     payload = callback.data.split(":", maxsplit=2)
 
     if len(payload) == 2 and payload[1] == "new":
-        is_admin = callback.from_user and _is_admin(callback.from_user.id)
+        is_admin = _is_admin(
+            chat_id=callback.message.chat.id if callback.message and callback.message.chat else None,
+            user_id=callback.from_user.id if callback.from_user else None,
+        )
         await callback.message.answer(
             _("Please enter the property price in USD."),
             reply_markup=build_main_keyboard(_, is_admin=is_admin),
@@ -206,7 +218,10 @@ async def _show_last_calculation(message):
     user_id = message.from_user.id
     amount = await user_preferences.get_last_amount(user_id)
     if amount is None:
-        is_admin = message.from_user and _is_admin(message.from_user.id)
+        is_admin = _is_admin(
+            chat_id=message.chat.id if message.chat else None,
+            user_id=message.from_user.id if message.from_user else None,
+        )
         await message.answer(_("No last calculation yet"), reply_markup=build_main_keyboard(_, is_admin=is_admin))
         return
 
@@ -222,7 +237,10 @@ async def _show_favorites(message):
     user_id = message.from_user.id
     amounts = await user_preferences.get_favorite_amounts(user_id)
     if not amounts:
-        is_admin = message.from_user and _is_admin(message.from_user.id)
+        is_admin = _is_admin(
+            chat_id=message.chat.id if message.chat else None,
+            user_id=message.from_user.id if message.from_user else None,
+        )
         await message.answer(_("No favorites yet"), reply_markup=build_main_keyboard(_, is_admin=is_admin))
         return
 
@@ -235,5 +253,8 @@ async def _show_favorites(message):
         )
     lines.append("")
     lines.append(_("Enter new amount hint"))
-    is_admin = message.from_user and _is_admin(message.from_user.id)
+    is_admin = _is_admin(
+        chat_id=message.chat.id if message.chat else None,
+        user_id=message.from_user.id if message.from_user else None,
+    )
     await message.answer("\n".join(lines), reply_markup=build_main_keyboard(_, is_admin=is_admin))

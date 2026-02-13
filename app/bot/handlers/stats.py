@@ -13,7 +13,11 @@ router = Router()
 @router.message(Command("stats"))
 async def stats(message, sessionmaker):
     _ = get_translator()
-    if message.chat.id not in config.ADMIN_ID:
+    is_admin = (
+        (message.chat and message.chat.id in config.ADMIN_ID)
+        or (message.from_user and message.from_user.id in config.ADMIN_ID)
+    )
+    if not is_admin:
         await message.answer(_("Access denied."))
         return
 

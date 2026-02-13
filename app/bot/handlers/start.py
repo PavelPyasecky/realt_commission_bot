@@ -13,7 +13,10 @@ router = Router()
 @router.message(CommandStart())
 async def start(message):
     _ = get_translator()
-    is_admin = message.from_user and message.from_user.id in config.ADMIN_ID
+    is_admin = (
+        (message.chat and message.chat.id in config.ADMIN_ID)
+        or (message.from_user and message.from_user.id in config.ADMIN_ID)
+    )
     await message.answer(
         _("Welcome message"),
         reply_markup=build_main_keyboard(_, is_admin=is_admin),
