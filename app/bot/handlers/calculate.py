@@ -2,10 +2,12 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
+from app.core.config import config
 from app.services import exceptions
 from app.services.commission import CommissionCalculator
 from app.services.input_parser import parse_amount_usd
 from app.services.rounding import round_fixed
+from app.services.stats import StatsService
 from app.services.user_preferences import UserPreferencesService
 from app.i18n import get_translator
 from app.bot.keyboards import build_main_keyboard, build_result_keyboard
@@ -27,6 +29,10 @@ def _comparison_amounts(base_amount):
     return [base_amount * 0.8, base_amount, base_amount * 1.2]
 
 
+def _is_admin(user_id):
+    return user_id in config.ADMIN_ID
+
+
 async def _send_comparison_message(message, base_amount, _):
     lines = [f"📈 <b>{_('Comparison scenarios')}</b>"]
     for amount in _comparison_amounts(base_amount):
@@ -37,7 +43,27 @@ async def _send_comparison_message(message, base_amount, _):
         )
     lines.append("")
     lines.append(_("Enter new amount hint"))
-    await message.answer("\n".join(lines), reply_markup=build_main_keyboard(_))
+    is_admin = message.from_user and _is_admin(message.from_user.id)
+    await message.answer("\n".join(lines), reply_markup=build_main_keyboard(_, is_admin=is_admin))
+
+
+async def _send_stats_message(message, sessionmaker, _):
+    if not message.from_user or not _is_admin(message.from_user.id):
+        await message.answer(_("Access denied."))
+        return
+
+    async with sessionmaker() as session:
+        stats_data = await StatsService().get_stats(session)
+
+    text = (
+        f"{_('Statistics')}\n\n"
+        f"DAU — {_('Active in last 24 hours')}: {stats_data['dau']}\n"
+        f"WAU — {_('Active in last 7 days')}: {stats_data['wau']}\n"
+        f"MAU — {_('Active in last 30 days')}: {stats_data['mau']}\n"
+        f"{_('All unique')}: {stats_data['total']}\n"
+    )
+    is_admin = message.from_user and _is_admin(message.from_user.id)
+    await message.answer(text, reply_markup=build_main_keyboard(_, is_admin=is_admin))
 
 
 def _action_texts(_):
@@ -46,6 +72,7 @@ def _action_texts(_):
         _("Last calculation"),
         _("Favorites"),
         _("Compare scenarios"),
+        _("User statistics"),
     }
 
 
@@ -70,12 +97,16 @@ async def compare_command(message):
 
 
 @router.message(F.text)
-async def calculate(message):
+async def calculate(message, sessionmaker):
     _ = get_translator()
     text = (message.text or "").strip()
+    is_admin = message.from_user and _is_admin(message.from_user.id)
 
     if text == _("Calculate commission"):
-        await message.answer(_("Please enter the property price in USD."), reply_markup=build_main_keyboard(_))
+        await message.answer(
+            _("Please enter the property price in USD."),
+            reply_markup=build_main_keyboard(_, is_admin=is_admin),
+        )
         return
     if text == _("Last calculation"):
         await _show_last_calculation(message)
@@ -90,6 +121,9 @@ async def calculate(message):
             base_amount = 120000.0
         await _send_comparison_message(message, base_amount, _)
         return
+    if text == _("User statistics"):
+        await _send_stats_message(message, sessionmaker, _)
+        return
 
     if text in _action_texts(_):
         return
@@ -100,7 +134,7 @@ async def calculate(message):
     except exceptions.InputError:
         await message.answer(
             _("Input format help"),
-            reply_markup=build_main_keyboard(_),
+            reply_markup=build_main_keyboard(_, is_admin=is_admin),
         )
         return
 
@@ -109,7 +143,7 @@ async def calculate(message):
 
     await message.answer(
         calculator.format_compact_html(),
-        reply_markup=build_result_keyboard(_, _amount_to_token(amount)),
+        reply_markup=build_result_keyboard(_, _amount_to_token(amount), active_view="short"),
     )
 
 
@@ -119,7 +153,11 @@ async def calculation_actions(callback):
     payload = callback.data.split(":", maxsplit=2)
 
     if len(payload) == 2 and payload[1] == "new":
-        await callback.message.answer(_("Please enter the property price in USD."), reply_markup=build_main_keyboard(_))
+        is_admin = callback.from_user and _is_admin(callback.from_user.id)
+        await callback.message.answer(
+            _("Please enter the property price in USD."),
+            reply_markup=build_main_keyboard(_, is_admin=is_admin),
+        )
         await callback.answer()
         return
 
@@ -141,15 +179,24 @@ async def calculation_actions(callback):
         await callback.answer()
         return
 
+    if action == "noop":
+        await callback.answer()
+        return
+
     calculator = await CommissionCalculator.from_amount(amount)
     if action == "short":
         text = calculator.format_compact_html()
-    else:
+        active_view = "short"
+    elif action == "detailed":
         text = calculator.format_detailed_html()
+        active_view = "detailed"
+    else:
+        await callback.answer()
+        return
 
     await callback.message.edit_text(
         text,
-        reply_markup=build_result_keyboard(_, amount_token),
+        reply_markup=build_result_keyboard(_, amount_token, active_view=active_view),
     )
     await callback.answer()
 
@@ -159,13 +206,14 @@ async def _show_last_calculation(message):
     user_id = message.from_user.id
     amount = await user_preferences.get_last_amount(user_id)
     if amount is None:
-        await message.answer(_("No last calculation yet"), reply_markup=build_main_keyboard(_))
+        is_admin = message.from_user and _is_admin(message.from_user.id)
+        await message.answer(_("No last calculation yet"), reply_markup=build_main_keyboard(_, is_admin=is_admin))
         return
 
     calculator = await CommissionCalculator.from_amount(amount)
     await message.answer(
         calculator.format_compact_html(),
-        reply_markup=build_result_keyboard(_, _amount_to_token(amount)),
+        reply_markup=build_result_keyboard(_, _amount_to_token(amount), active_view="short"),
     )
 
 
@@ -174,7 +222,8 @@ async def _show_favorites(message):
     user_id = message.from_user.id
     amounts = await user_preferences.get_favorite_amounts(user_id)
     if not amounts:
-        await message.answer(_("No favorites yet"), reply_markup=build_main_keyboard(_))
+        is_admin = message.from_user and _is_admin(message.from_user.id)
+        await message.answer(_("No favorites yet"), reply_markup=build_main_keyboard(_, is_admin=is_admin))
         return
 
     lines = [f"⭐ <b>{_('Favorites')}</b>"]
@@ -186,4 +235,5 @@ async def _show_favorites(message):
         )
     lines.append("")
     lines.append(_("Enter new amount hint"))
-    await message.answer("\n".join(lines), reply_markup=build_main_keyboard(_))
+    is_admin = message.from_user and _is_admin(message.from_user.id)
+    await message.answer("\n".join(lines), reply_markup=build_main_keyboard(_, is_admin=is_admin))

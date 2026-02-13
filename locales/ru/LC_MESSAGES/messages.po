@@ -54,6 +54,9 @@ msgstr "⭐ Избранное"
 msgid "Compare scenarios"
 msgstr "📈 Показать сценарии"
 
+msgid "User statistics"
+msgstr "📊 Статистика пользователей"
+
 msgid "Short"
 msgstr "Коротко"
 
