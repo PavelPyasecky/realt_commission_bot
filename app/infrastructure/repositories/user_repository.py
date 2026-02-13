@@ -7,14 +7,24 @@ from app.infrastructure.database.models import User
 
 
 class UserRepository:
-    async def touch_user(self, session, tg_id):
+    async def touch_user(self, session, tg_id, username=None, first_name=None):
         now = datetime.utcnow()
         stmt = (
             insert(User)
-            .values(tg_id=tg_id, created_at=now, last_seen=now)
+            .values(
+                tg_id=tg_id,
+                username=username,
+                first_name=first_name,
+                created_at=now,
+                last_seen=now,
+            )
             .on_conflict_do_update(
                 index_elements=[User.tg_id],
-                set_={"last_seen": now},
+                set_={
+                    "last_seen": now,
+                    "username": username,
+                    "first_name": first_name,
+                },
             )
         )
         await session.execute(stmt)
@@ -29,3 +39,15 @@ class UserRepository:
         stmt = select(func.count(User.tg_id)).where(User.last_seen >= since_dt)
         result = await session.execute(stmt)
         return int(result.scalar_one())
+
+    async def list_active_since(self, session, since, limit, offset):
+        since_dt = datetime.utcnow() - since
+        stmt = (
+            select(User)
+            .where(User.last_seen >= since_dt)
+            .order_by(User.last_seen.desc(), User.tg_id.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await session.execute(stmt)
+        return list(result.scalars().all())

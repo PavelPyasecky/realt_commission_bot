@@ -18,7 +18,12 @@ class UserActivityMiddleware(BaseMiddleware):
         if sessionmaker and user:
             async with sessionmaker() as session:
                 try:
-                    await self.user_repository.touch_user(session, user.id)
+                    await self.user_repository.touch_user(
+                        session,
+                        user.id,
+                        username=user.username,
+                        first_name=user.first_name,
+                    )
                 except SQLAlchemyError:
                     # Do not break update handling if activity tracking fails.
                     logger.exception("Failed to touch user activity")

@@ -61,3 +61,52 @@ def build_result_keyboard(_, amount_token, active_view="short"):
         ]
     )
 
+
+def build_user_stats_keyboard(_, period, page, total_pages):
+    def _period_button(label_key, period_value):
+        selected = period == period_value
+        return InlineKeyboardButton(
+            text=f"• {_(label_key)}" if selected else _(label_key),
+            callback_data=(
+                f"ustats:noop:{period}:{page}"
+                if selected
+                else f"ustats:period:{period_value}:1"
+            ),
+        )
+
+    prev_page = max(1, page - 1)
+    next_page = min(total_pages, page + 1)
+    is_first = page <= 1
+    is_last = page >= total_pages
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                _period_button("Stats period day", "day"),
+                _period_button("Stats period week", "week"),
+                _period_button("Stats period month", "month"),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=_("Stats previous"),
+                    callback_data=(
+                        f"ustats:noop:{period}:{page}"
+                        if is_first
+                        else f"ustats:page:{period}:{prev_page}"
+                    ),
+                ),
+                InlineKeyboardButton(
+                    text=f"{page}/{total_pages}",
+                    callback_data=f"ustats:noop:{period}:{page}",
+                ),
+                InlineKeyboardButton(
+                    text=_("Stats next"),
+                    callback_data=(
+                        f"ustats:noop:{period}:{page}"
+                        if is_last
+                        else f"ustats:page:{period}:{next_page}"
+                    ),
+                ),
+            ],
+        ]
+    )
+

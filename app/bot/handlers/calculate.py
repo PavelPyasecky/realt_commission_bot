@@ -1,3 +1,5 @@
+from html import escape
+
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
@@ -10,11 +12,16 @@ from app.services.rounding import round_fixed
 from app.services.stats import StatsService
 from app.services.user_preferences import UserPreferencesService
 from app.i18n import get_translator
-from app.bot.keyboards import build_main_keyboard, build_result_keyboard
+from app.bot.keyboards import (
+    build_main_keyboard,
+    build_result_keyboard,
+    build_user_stats_keyboard,
+)
 
 
 router = Router()
 user_preferences = UserPreferencesService()
+STATS_PAGE_SIZE = 10
 
 
 def _amount_to_token(amount):
@@ -59,17 +66,92 @@ async def _send_stats_message(message, sessionmaker, _):
         await message.answer(_("Access denied."))
         return
 
-    async with sessionmaker() as session:
-        stats_data = await StatsService().get_stats(session)
-
-    text = (
-        f"{_('Statistics')}\n\n"
-        f"DAU — {_('Active in last 24 hours')}: {stats_data['dau']}\n"
-        f"WAU — {_('Active in last 7 days')}: {stats_data['wau']}\n"
-        f"MAU — {_('Active in last 30 days')}: {stats_data['mau']}\n"
-        f"{_('All unique')}: {stats_data['total']}\n"
+    text, keyboard = await _build_user_stats_response(
+        sessionmaker=sessionmaker,
+        _=_,
+        period="day",
+        page=1,
     )
-    await message.answer(text, reply_markup=build_main_keyboard(_, is_admin=is_admin))
+    await message.answer(
+        text,
+        reply_markup=keyboard,
+    )
+
+
+async def _build_user_stats_response(sessionmaker, _, period, page):
+    stats_service = StatsService()
+    async with sessionmaker() as session:
+        summary = await stats_service.get_stats(session)
+        page_data = await stats_service.get_users_page(
+            session,
+            period=period,
+            page=page,
+            page_size=STATS_PAGE_SIZE,
+        )
+
+    users = page_data["users"]
+    period_label = _period_label(_, page_data["period"])
+    lines = [
+        f"<b>{_('Statistics')}</b>",
+        "",
+        f"DAU — {_('Active in last 24 hours')}: {summary['dau']}",
+        f"WAU — {_('Active in last 7 days')}: {summary['wau']}",
+        f"MAU — {_('Active in last 30 days')}: {summary['mau']}",
+        f"{_('All unique')}: {summary['total']}",
+        "",
+        f"<b>{_('Users section title')}</b>: {period_label}",
+        f"{_('Users in period')}: {page_data['total']}",
+        "",
+    ]
+    if not users:
+        lines.append(_("No users in period"))
+    else:
+        start_index = (page_data["page"] - 1) * STATS_PAGE_SIZE
+        for idx, user in enumerate(users, start=start_index + 1):
+            lines.append(_format_user_line(_, idx, user))
+    text = "\n".join(lines)
+    keyboard = build_user_stats_keyboard(
+        _,
+        period=page_data["period"],
+        page=page_data["page"],
+        total_pages=page_data["total_pages"],
+    )
+    return text, keyboard
+
+
+def _format_user_line(_, idx, user):
+    username = (user.username or "").strip()
+    username_clean = username.lstrip("@")
+    first_name = escape((user.first_name or "").strip()) or "—"
+    username_display = f"@{escape(username_clean)}" if username_clean else "—"
+    if username_clean:
+        profile_link = f'<a href="https://t.me/{username_clean}">@{escape(username_clean)}</a>'
+    else:
+        profile_link = f'<a href="tg://user?id={user.tg_id}">{_("Profile link")}</a>'
+
+    created_at = _format_dt(user.created_at)
+    last_seen = _format_dt(user.last_seen)
+    return (
+        f"{idx}. {profile_link} | ID: <code>{user.tg_id}</code>\n"
+        f"   {_('Username field')}: {username_display} | "
+        f"{_('First name field')}: {first_name}\n"
+        f"   {_('Created field')}: {created_at} | {_('Last seen field')}: {last_seen}"
+    )
+
+
+def _format_dt(dt):
+    if dt is None:
+        return "—"
+    return dt.strftime("%Y-%m-%d %H:%M")
+
+
+def _period_label(_, period):
+    mapping = {
+        "day": _("Stats period day"),
+        "week": _("Stats period week"),
+        "month": _("Stats period month"),
+    }
+    return mapping.get(period, period)
 
 
 def _action_texts(_):
@@ -210,6 +292,55 @@ async def calculation_actions(callback):
         text,
         reply_markup=build_result_keyboard(_, amount_token, active_view=active_view),
     )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("ustats:"))
+async def user_stats_actions(callback, sessionmaker):
+    _ = get_translator()
+    is_admin = _is_admin(
+        chat_id=callback.message.chat.id if callback.message and callback.message.chat else None,
+        user_id=callback.from_user.id if callback.from_user else None,
+    )
+    if not is_admin:
+        await callback.answer(_("Access denied."), show_alert=True)
+        return
+
+    payload = callback.data.split(":", maxsplit=3)
+    if len(payload) != 4:
+        await callback.answer()
+        return
+
+    _prefix, action, period, value = payload
+    if action == "noop":
+        await callback.answer()
+        return
+
+    if action == "period":
+        target_period = period
+        target_page = 1
+    elif action == "page":
+        target_period = period
+        try:
+            target_page = int(value)
+        except ValueError:
+            await callback.answer()
+            return
+    else:
+        await callback.answer()
+        return
+
+    try:
+        text, keyboard = await _build_user_stats_response(
+            sessionmaker=sessionmaker,
+            _=_,
+            period=target_period,
+            page=target_page,
+        )
+    except ValueError:
+        await callback.answer()
+        return
+    await callback.message.edit_text(text, reply_markup=keyboard)
     await callback.answer()
 
 

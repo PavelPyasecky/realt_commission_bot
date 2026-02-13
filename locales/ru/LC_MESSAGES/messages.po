@@ -90,6 +90,45 @@ msgstr "Добавлено в избранное"
 msgid "Comparison scenarios"
 msgstr "Сценарии сравнения"
 
+msgid "Users section title"
+msgstr "Пользователи"
+
+msgid "Users in period"
+msgstr "Всего в периоде"
+
+msgid "No users in period"
+msgstr "За выбранный период пользователей не найдено."
+
+msgid "Profile link"
+msgstr "Профиль"
+
+msgid "Username field"
+msgstr "Username"
+
+msgid "First name field"
+msgstr "Имя"
+
+msgid "Created field"
+msgstr "Создан"
+
+msgid "Last seen field"
+msgstr "Последняя активность"
+
+msgid "Stats period day"
+msgstr "За день"
+
+msgid "Stats period week"
+msgstr "За неделю"
+
+msgid "Stats period month"
+msgstr "За месяц"
+
+msgid "Stats previous"
+msgstr "Назад"
+
+msgid "Stats next"
+msgstr "Вперед"
+
 msgid "Welcome message"
 msgstr "Привет! Я помогу быстро рассчитать налог агента.\n\nВведите стоимость объекта в USD (например, 125000 или 125k) или выберите действие ниже."
 
