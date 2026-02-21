@@ -228,6 +228,12 @@ async def calculate(message, sessionmaker):
             reply_markup=build_main_keyboard(_, is_admin=is_admin),
         )
         return
+    except RuntimeError:
+        await message.answer(
+            _("USD rate temporarily unavailable"),
+            reply_markup=build_main_keyboard(_, is_admin=is_admin),
+        )
+        return
 
     user_id = message.from_user.id
     await user_preferences.save_last_amount(user_id, amount)

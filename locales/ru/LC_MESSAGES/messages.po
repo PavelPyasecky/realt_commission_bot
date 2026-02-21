@@ -78,6 +78,9 @@ msgstr "Новый расчет"
 msgid "Input format help"
 msgstr "Введите стоимость в USD. Примеры: 125000, 125 000, 125k."
 
+msgid "USD rate temporarily unavailable"
+msgstr "Курс USD временно недоступен. Попробуйте через минуту."
+
 msgid "No last calculation yet"
 msgstr "Пока нет последнего расчета."
 
