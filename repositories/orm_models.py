@@ -2,23 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Index, String, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy.types import TypeDecorator
 
 from models.lead import Lead
 from models.reminder import Reminder
-
-
-class ISODateTime(TypeDecorator[datetime | None]):
-    impl = String
-    cache_ok = True
-
-    def process_bind_param(self, value: datetime | None, dialect) -> str | None:
-        return value.isoformat() if value else None
-
-    def process_result_value(self, value: str | None, dialect) -> datetime | None:
-        return datetime.fromisoformat(value) if value else None
 
 
 class Base(DeclarativeBase):
@@ -45,12 +33,12 @@ class LeadRecord(Base):
     lead_type: Mapped[str]
     source: Mapped[str]
     status: Mapped[str]
-    next_call_at: Mapped[datetime | None] = mapped_column(ISODateTime())
-    last_contact_at: Mapped[datetime | None] = mapped_column(ISODateTime())
+    next_call_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_contact_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     capture_method: Mapped[str]
-    is_archived: Mapped[bool] = mapped_column(default=False)
-    created_at: Mapped[datetime] = mapped_column(ISODateTime())
-    updated_at: Mapped[datetime] = mapped_column(ISODateTime())
+    is_archived: Mapped[bool] = mapped_column(Boolean(), default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
     reminders: Mapped[list["ReminderRecord"]] = relationship(
         back_populates="lead",
@@ -86,17 +74,18 @@ class ReminderRecord(Base):
             "idx_active_reminder_per_lead",
             "lead_id",
             unique=True,
+            postgresql_where=text("is_active = true"),
             sqlite_where=text("is_active = 1"),
         ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     lead_id: Mapped[int] = mapped_column(ForeignKey("leads.id", ondelete="CASCADE"))
-    scheduled_at: Mapped[datetime] = mapped_column(ISODateTime())
-    is_active: Mapped[bool] = mapped_column(default=True)
-    sent_at: Mapped[datetime | None] = mapped_column(ISODateTime())
-    created_at: Mapped[datetime] = mapped_column(ISODateTime())
-    updated_at: Mapped[datetime] = mapped_column(ISODateTime())
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    is_active: Mapped[bool] = mapped_column(Boolean(), default=True, nullable=False)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
     lead: Mapped[LeadRecord] = relationship(back_populates="reminders")
 

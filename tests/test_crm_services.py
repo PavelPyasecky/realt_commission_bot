@@ -11,7 +11,7 @@ from services.reminder_service import ReminderService
 
 
 def build_services(base_path: Path):
-    database = Database(str(base_path / "crm.sqlite3"))
+    database = Database(f"sqlite:///{base_path / 'crm.sqlite3'}")
     database.initialize()
     lead_repository = LeadRepository(database)
     reminder_repository = ReminderRepository(database)

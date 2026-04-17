@@ -31,12 +31,12 @@ def upgrade() -> None:
         sa.Column("lead_type", sa.String(), nullable=False),
         sa.Column("source", sa.String(), nullable=False),
         sa.Column("status", sa.String(), nullable=False),
-        sa.Column("next_call_at", sa.String(), nullable=True),
-        sa.Column("last_contact_at", sa.String(), nullable=True),
+        sa.Column("next_call_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("last_contact_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("capture_method", sa.String(), nullable=False),
         sa.Column("is_archived", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column("created_at", sa.String(), nullable=False),
-        sa.Column("updated_at", sa.String(), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
@@ -63,11 +63,11 @@ def upgrade() -> None:
         "lead_reminders",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("lead_id", sa.Integer(), nullable=False),
-        sa.Column("scheduled_at", sa.String(), nullable=False),
+        sa.Column("scheduled_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
-        sa.Column("sent_at", sa.String(), nullable=True),
-        sa.Column("created_at", sa.String(), nullable=False),
-        sa.Column("updated_at", sa.String(), nullable=False),
+        sa.Column("sent_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(["lead_id"], ["leads.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -76,6 +76,7 @@ def upgrade() -> None:
         "lead_reminders",
         ["lead_id"],
         unique=True,
+        postgresql_where=sa.text("is_active = true"),
         sqlite_where=sa.text("is_active = 1"),
     )
 

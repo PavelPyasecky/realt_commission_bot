@@ -9,7 +9,7 @@ from repositories.lead_repository import LeadRepository
 from repositories.reminder_repository import ReminderRepository
 from services.lead_service import LeadService
 from services.reminder_service import ReminderService
-from settings import ACCESS_TOKEN, CRM_DATABASE_PATH, CRM_TIMEZONE
+from settings import ACCESS_TOKEN, CRM_DATABASE_URL, CRM_TIMEZONE
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -29,7 +29,7 @@ logging.basicConfig(
 
 
 def build_services() -> tuple[LeadService, ReminderService]:
-    database = Database(CRM_DATABASE_PATH)
+    database = Database(CRM_DATABASE_URL)
     database.initialize()
     lead_repository = LeadRepository(database)
     reminder_repository = ReminderRepository(database)

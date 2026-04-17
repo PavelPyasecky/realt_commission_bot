@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import os
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from repositories.orm_models import Base
+from settings import CRM_DATABASE_URL
 
 config = context.config
 
@@ -16,14 +16,9 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
-def database_url() -> str:
-    database_path = os.getenv("CRM_DATABASE_PATH", "data/crm.sqlite3")
-    return f"sqlite:///{database_path}"
-
-
 def run_migrations_offline() -> None:
     context.configure(
-        url=database_url(),
+        url=CRM_DATABASE_URL,
         target_metadata=target_metadata,
         literal_binds=True,
         compare_type=True,
@@ -36,7 +31,7 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = database_url()
+    configuration["sqlalchemy.url"] = CRM_DATABASE_URL
 
     connectable = engine_from_config(
         configuration,
