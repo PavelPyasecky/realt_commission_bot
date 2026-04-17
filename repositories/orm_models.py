@@ -4,6 +4,7 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.types import TypeDecorator
 
 from models.lead import Lead
 from models.reminder import Reminder
@@ -11,6 +12,30 @@ from models.reminder import Reminder
 
 class Base(DeclarativeBase):
     pass
+
+
+class TZDateTime(TypeDecorator[datetime | None]):
+    impl = DateTime
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(DateTime(timezone=True))
+        return dialect.type_descriptor(String())
+
+    def process_bind_param(self, value: datetime | None, dialect):
+        if value is None:
+            return None
+        if dialect.name == "postgresql":
+            return value
+        return value.isoformat()
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            return value
+        return datetime.fromisoformat(value)
 
 
 class LeadRecord(Base):
@@ -33,12 +58,12 @@ class LeadRecord(Base):
     lead_type: Mapped[str]
     source: Mapped[str]
     status: Mapped[str]
-    next_call_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    last_contact_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    next_call_at: Mapped[datetime | None] = mapped_column(TZDateTime())
+    last_contact_at: Mapped[datetime | None] = mapped_column(TZDateTime())
     capture_method: Mapped[str]
     is_archived: Mapped[bool] = mapped_column(Boolean(), default=False, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(TZDateTime())
+    updated_at: Mapped[datetime] = mapped_column(TZDateTime())
 
     reminders: Mapped[list["ReminderRecord"]] = relationship(
         back_populates="lead",
@@ -81,11 +106,11 @@ class ReminderRecord(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     lead_id: Mapped[int] = mapped_column(ForeignKey("leads.id", ondelete="CASCADE"))
-    scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    scheduled_at: Mapped[datetime] = mapped_column(TZDateTime())
     is_active: Mapped[bool] = mapped_column(Boolean(), default=True, nullable=False)
-    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    sent_at: Mapped[datetime | None] = mapped_column(TZDateTime())
+    created_at: Mapped[datetime] = mapped_column(TZDateTime())
+    updated_at: Mapped[datetime] = mapped_column(TZDateTime())
 
     lead: Mapped[LeadRecord] = relationship(back_populates="reminders")
 
