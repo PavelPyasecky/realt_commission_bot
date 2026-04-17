@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from models.lead import Lead
@@ -13,6 +13,10 @@ def _serialize_datetime(value: datetime | None) -> str | None:
 
 def _parse_datetime(value: str | None) -> datetime | None:
     return datetime.fromisoformat(value) if value else None
+
+
+def _utc_now() -> datetime:
+    return datetime.now(UTC)
 
 
 class LeadRepository:
@@ -36,7 +40,7 @@ class LeadRepository:
         last_contact_at: datetime | None,
         capture_method: str,
     ) -> Lead:
-        now = datetime.utcnow()
+        now = _utc_now()
 
         with self.database.connection() as connection:
             cursor = connection.execute(
@@ -104,7 +108,7 @@ class LeadRepository:
             key: _serialize_datetime(value) if isinstance(value, datetime) else value
             for key, value in fields.items()
         }
-        normalized_fields["updated_at"] = datetime.utcnow().isoformat()
+        normalized_fields["updated_at"] = _utc_now().isoformat()
 
         assignments = ", ".join(f"{key} = ?" for key in normalized_fields)
         params = list(normalized_fields.values()) + [lead_id, owner_user_id]

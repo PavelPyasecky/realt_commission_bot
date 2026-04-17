@@ -84,7 +84,7 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
     logging.exception("Unhandled update error", exc_info=error)
 
 
-def main() -> None:
+def build_application() -> Application:
     lead_service, reminder_service = build_services()
     crm_handler = CRMHandler(lead_service, reminder_service)
 
@@ -99,6 +99,11 @@ def main() -> None:
     application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), route_message))
     application.add_handler(MessageHandler(filters.COMMAND, unknown))
     application.add_error_handler(error_handler)
+    return application
+
+
+def main() -> None:
+    application = build_application()
 
     application.run_polling()
 

@@ -104,6 +104,9 @@ class LeadService:
             raise exceptions.LeadNotFoundError
         return lead
 
+    def get_lead_by_id(self, lead_id: int) -> Lead | None:
+        return self.lead_repository.get_by_id(lead_id)
+
     def list_leads(self, owner_user_id: int, *, archived: bool = False) -> list[Lead]:
         return self.lead_repository.list_by_owner(owner_user_id, archived=archived)
 

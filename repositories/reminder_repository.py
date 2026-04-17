@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from models.reminder import Reminder
 from repositories.database import Database
@@ -19,7 +19,7 @@ class ReminderRepository:
         self.database = database
 
     def set_active(self, lead_id: int, scheduled_at: datetime) -> Reminder:
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(UTC).isoformat()
 
         with self.database.connection() as connection:
             connection.execute(
@@ -52,7 +52,7 @@ class ReminderRepository:
                 SET is_active = 0, updated_at = ?
                 WHERE lead_id = ? AND is_active = 1
                 """,
-                (datetime.utcnow().isoformat(), lead_id),
+                (datetime.now(UTC).isoformat(), lead_id),
             )
 
     def get_active(self, lead_id: int) -> Reminder | None:
@@ -92,6 +92,7 @@ class ReminderRepository:
         return [self._row_to_reminder(row) for row in rows]
 
     def mark_sent(self, reminder_id: int) -> Reminder | None:
+        now = datetime.now(UTC).isoformat()
         with self.database.connection() as connection:
             connection.execute(
                 """
@@ -99,11 +100,7 @@ class ReminderRepository:
                 SET sent_at = ?, updated_at = ?
                 WHERE id = ?
                 """,
-                (
-                    datetime.utcnow().isoformat(),
-                    datetime.utcnow().isoformat(),
-                    reminder_id,
-                ),
+                (now, now, reminder_id),
             )
 
         return self.get_by_id(reminder_id)
