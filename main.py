@@ -1,98 +1,107 @@
 import logging
-from uuid import uuid4
-
-from telegram import Update, InlineQueryResultArticle, InputTextMessageContent
-from telegram.constants import ParseMode
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, InlineQueryHandler
 
 import exceptions
-from services.commission import CommissionCalculator
-from settings import ACCESS_TOKEN
-from utils import round_number
-
-GIF_URL = "https://i.pinimg.com/originals/d5/a7/55/d5a755aee7b8aeabc44258b9aa173ba5.gif"
-THUMBNAIL_URL = "https://thumbs.dreamstime.com/b/icon-commission-coins-commission-267725653.jpg"
+from handlers.calculator import inline_commission, send_calculation
+from handlers.crm import CRMHandler
+from handlers.start import start
+from repositories.database import Database
+from repositories.lead_repository import LeadRepository
+from repositories.reminder_repository import ReminderRepository
+from services.lead_service import LeadService
+from services.reminder_service import ReminderService
+from settings import ACCESS_TOKEN, CRM_DATABASE_PATH, CRM_TIMEZONE
+from telegram import Update
+from telegram.ext import (
+    Application,
+    ApplicationBuilder,
+    CallbackQueryHandler,
+    CommandHandler,
+    ContextTypes,
+    InlineQueryHandler,
+    MessageHandler,
+    filters,
+)
 
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.WARNING
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.WARNING,
 )
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id,
-                                   text="Hey! I'm a bot. Please type a cost number of the object in USD!")
+def build_services() -> tuple[LeadService, ReminderService]:
+    database = Database(CRM_DATABASE_PATH)
+    database.initialize()
+    lead_repository = LeadRepository(database)
+    reminder_repository = ReminderRepository(database)
+    lead_service = LeadService(lead_repository, reminder_repository)
+    reminder_service = ReminderService(lead_service, CRM_TIMEZONE)
+    return lead_service, reminder_service
 
 
-async def calculate(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        text_with_html = calculate_commission(update.message.text)
-    except exceptions.InputError:
-        await context.bot.send_message(chat_id=update.effective_chat.id,
-                                       text="Please type a cost number of the object in USD: ")
-    else:
-        await context.bot.send_message(chat_id=update.effective_chat.id,
-                                       text=text_with_html, parse_mode=ParseMode.HTML)
-
-
-async def inline_commission(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.inline_query.query
-
-    if not query:
+async def route_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    crm_handler: CRMHandler = context.application.bot_data["crm_handler"]
+    if await crm_handler.handle_message(update, context):
         return
 
-    text = calculate_commission(query)
-    commission = CommissionCalculator(query)
-    description = f"Tax cost (USD):\t{round_number(commission.tax_cost_in_USD)}$"
-
-    results = [
-        InlineQueryResultArticle(
-            id=str(uuid4()),
-            title="Calculated commission",
-            description=description,
-            thumbnail_url=THUMBNAIL_URL,
-            input_message_content=InputTextMessageContent(text, parse_mode=ParseMode.HTML),
-        ),
-    ]
-
-    await context.bot.answer_inline_query(update.inline_query.id, results)
+    await send_calculation(update, context)
 
 
-def calculate_commission(query):
-    commission = CommissionCalculator(query)
-    text = (f"Object cost (USD):\t<b>{round_number(commission.object_cost_in_USD)}$</b>\n"
-            f"USD rate:\t<b>{round_number(commission.USD_rate)}$</b>\n"
-            f"Object cost (BYN):\t<b>{round_number(commission.object_cost_in_BYN)}</b>\n"
-            f"Basic Value (BYN):\t<b>{round_number(commission.basic_value_in_BYN)}</b>\n"
-            f"Object cost in Basic Value (BV):\t<b>{round_number(commission.object_cost_in_basic_value)}</b>\n"
-            f"Commission (%):\t<b>{round_number(commission.commission)}%</b>\n"
-            f"Tax cost (BYN):\t<b>{round_number(commission.tax_cost_in_BYN)}</b>\n"
-            f"Tax cost (USD):\t<b>{round_number(commission.tax_cost_in_USD)}$</b>\n")
-
-    return text
+async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Unknown command. Use /start to open the menu.",
+    )
 
 
-async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="Sorry, I didn't understand that command.")
+async def on_startup(application: Application) -> None:
+    reminder_service: ReminderService = application.bot_data["reminder_service"]
+    await reminder_service.load_existing_jobs(application)
+
+
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    error = context.error
+    if isinstance(error, exceptions.LeadNotFoundError):
+        target = getattr(update, "callback_query", None)
+        if target is not None:
+            await target.answer("Lead not found.", show_alert=True)
+            return
+
+        if getattr(update, "effective_chat", None) is not None:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text="Lead not found.",
+            )
+        return
+
+    if isinstance(error, ValueError):
+        if getattr(update, "effective_chat", None) is not None:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=str(error),
+            )
+        return
+
+    logging.exception("Unhandled update error", exc_info=error)
 
 
 def main() -> None:
-    application = ApplicationBuilder().token(ACCESS_TOKEN).build()
+    lead_service, reminder_service = build_services()
+    crm_handler = CRMHandler(lead_service, reminder_service)
 
-    start_handler = CommandHandler('start', start)
-    application.add_handler(start_handler)
+    application = ApplicationBuilder().token(ACCESS_TOKEN).post_init(on_startup).build()
+    application.bot_data["crm_handler"] = crm_handler
+    application.bot_data["reminder_service"] = reminder_service
 
-    calculate_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), calculate)
-    application.add_handler(calculate_handler)
-
-    inline_commission_handler = InlineQueryHandler(inline_commission)
-    application.add_handler(inline_commission_handler)
-
-    unknown_handler = MessageHandler(filters.COMMAND, unknown)
-    application.add_handler(unknown_handler)
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CallbackQueryHandler(crm_handler.handle_callback))
+    application.add_handler(InlineQueryHandler(inline_commission))
+    application.add_handler(MessageHandler(filters.FORWARDED, route_message))
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), route_message))
+    application.add_handler(MessageHandler(filters.COMMAND, unknown))
+    application.add_error_handler(error_handler)
 
     application.run_polling()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
