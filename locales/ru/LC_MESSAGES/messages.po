@@ -1,0 +1,379 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ru\n"
+
+msgid "Object cost (USD):"
+msgstr "Стоимость объекта (USD):"
+
+msgid "USD rate:"
+msgstr "Курс USD:"
+
+msgid "Object cost (BYN):"
+msgstr "Стоимость объекта (BYN):"
+
+msgid "Basic Value (BYN):"
+msgstr "Базовая величина (BYN):"
+
+msgid "Object cost in basic values:"
+msgstr "Стоимость в базовых величинах:"
+
+msgid "Commission rate:"
+msgstr "Ставка комиссии:"
+
+msgid "Tax (BYN):"
+msgstr "Налог (BYN):"
+
+msgid "Tax (USD):"
+msgstr "Налог (USD):"
+
+msgid "Calculation result"
+msgstr "Результат расчета"
+
+msgid "Calculation details"
+msgstr "Детали расчета"
+
+msgid "Formula"
+msgstr "Формула"
+
+msgid "Enter new amount hint"
+msgstr "Введите новую сумму в USD, чтобы пересчитать."
+
+msgid "Commission calculation"
+msgstr "Расчет комиссии"
+
+msgid "Calculate commission"
+msgstr "🧮 Рассчитать комиссию"
+
+msgid "Last calculation"
+msgstr "🕘 Последний расчет"
+
+msgid "Favorites"
+msgstr "⭐ Избранное"
+
+msgid "Compare scenarios"
+msgstr "📈 Показать сценарии"
+
+msgid "User statistics"
+msgstr "📊 Статистика пользователей"
+
+msgid "Short"
+msgstr "Коротко"
+
+msgid "Detailed"
+msgstr "Подробно"
+
+msgid "Add to favorites"
+msgstr "⭐ В избранное"
+
+msgid "Compare"
+msgstr "Показать сценарии"
+
+msgid "Share"
+msgstr "Поделиться"
+
+msgid "New calculation"
+msgstr "Новый расчет"
+
+msgid "Input format help"
+msgstr "Введите стоимость в USD. Примеры: 125000, 125 000, 125k."
+
+msgid "USD rate temporarily unavailable"
+msgstr "Курс USD временно недоступен. Попробуйте через минуту."
+
+msgid "No last calculation yet"
+msgstr "Пока нет последнего расчета."
+
+msgid "No favorites yet"
+msgstr "Пока нет избранных расчетов."
+
+msgid "Added to favorites"
+msgstr "Добавлено в избранное"
+
+msgid "Comparison scenarios"
+msgstr "Сценарии сравнения"
+
+msgid "Users section title"
+msgstr "Пользователи"
+
+msgid "Users in period"
+msgstr "Всего в периоде"
+
+msgid "No users in period"
+msgstr "За выбранный период пользователей не найдено."
+
+msgid "Profile link"
+msgstr "Профиль"
+
+msgid "Username field"
+msgstr "Username"
+
+msgid "First name field"
+msgstr "Имя"
+
+msgid "Created field"
+msgstr "Создан"
+
+msgid "Last seen field"
+msgstr "Последняя активность"
+
+msgid "Stats period day"
+msgstr "За день"
+
+msgid "Stats period week"
+msgstr "За неделю"
+
+msgid "Stats period month"
+msgstr "За месяц"
+
+msgid "Stats previous"
+msgstr "Назад"
+
+msgid "Stats next"
+msgstr "Вперед"
+
+msgid "Welcome message"
+msgstr "Привет! Я помогу быстро рассчитать налог агента.\n\nВведите стоимость объекта в USD (например, 125000 или 125k) или выберите действие ниже."
+
+msgid "DAU"
+msgstr "DAU"
+
+msgid "WAU"
+msgstr "WAU"
+
+msgid "MAU"
+msgstr "MAU"
+
+msgid "All unique"
+msgstr "Всего уникальных"
+
+msgid "Please enter the property price in USD."
+msgstr "Введите стоимость объекта в USD."
+
+msgid "Please enter a number in USD."
+msgstr "Введите число в USD."
+
+msgid "Payments are not available yet."
+msgstr "Оплата пока недоступна."
+
+msgid "Sorry, I didn't understand that command."
+msgstr "Команда не распознана."
+
+msgid "Access denied."
+msgstr "Доступ запрещен."
+
+msgid "Statistics"
+msgstr "Статистика"
+
+msgid "Active in last 24 hours"
+msgstr "Активные за 24 часа"
+
+msgid "Active in last 7 days"
+msgstr "Активные за 7 дней"
+
+msgid "Active in last 30 days"
+msgstr "Активные за 30 дней"
+
+msgid "CRM"
+msgstr "👥 Лиды"
+
+msgid "Add lead"
+msgstr "➕ Добавить лида"
+
+msgid "Today leads"
+msgstr "📅 Лиды на сегодня"
+
+msgid "All leads"
+msgstr "📋 Все лиды"
+
+msgid "Archived leads"
+msgstr "🗄 Архив лидов"
+
+msgid "Forwarded lead"
+msgstr "📨 Лид из пересланного"
+
+msgid "Choose lead type."
+msgstr "Выберите тип лида."
+
+msgid "Choose lead source."
+msgstr "Выберите источник лида."
+
+msgid "Send the lead name."
+msgstr "Отправьте имя лида."
+
+msgid "Send the phone number or skip this field."
+msgstr "Отправьте номер телефона или пропустите этот шаг."
+
+msgid "Choose the first reminder."
+msgstr "Выберите первое напоминание."
+
+msgid "Lead draft expired. Start again from CRM."
+msgstr "Черновик лида устарел. Начните заново из CRM."
+
+msgid "No active leads yet."
+msgstr "Пока нет активных лидов."
+
+msgid "No archived leads."
+msgstr "Пока нет архивных лидов."
+
+msgid "No reminders for today."
+msgstr "На сегодня напоминаний нет."
+
+msgid "Overdue"
+msgstr "Просрочено"
+
+msgid "Today"
+msgstr "Сегодня"
+
+msgid "Forward a client message to create a lead."
+msgstr "Перешлите сообщение клиента, чтобы создать лида."
+
+msgid "Possible duplicate found: {name}"
+msgstr "Найден возможный дубль: {name}"
+
+msgid "Edit {name}"
+msgstr "Редактирование: {name}"
+
+msgid "Choose the new status."
+msgstr "Выберите новый статус."
+
+msgid "Choose the reminder time."
+msgstr "Выберите время напоминания."
+
+msgid "Send the new lead name."
+msgstr "Отправьте новое имя лида."
+
+msgid "Send the new phone number."
+msgstr "Отправьте новый номер телефона."
+
+msgid "Choose the new lead type."
+msgstr "Выберите новый тип лида."
+
+msgid "Choose the new lead source."
+msgstr "Выберите новый источник лида."
+
+msgid "Name is required. Send the lead name."
+msgstr "Имя обязательно. Отправьте имя лида."
+
+msgid "Lead set reminder"
+msgstr "Напоминание"
+
+msgid "Lead change status"
+msgstr "Статус"
+
+msgid "Lead mark called"
+msgstr "Звонок выполнен"
+
+msgid "Lead edit"
+msgstr "Редактировать"
+
+msgid "Lead phone"
+msgstr "Телефон"
+
+msgid "Lead restore"
+msgstr "Восстановить"
+
+msgid "Lead archive"
+msgstr "В архив"
+
+msgid "Lead name"
+msgstr "Имя"
+
+msgid "Lead type"
+msgstr "Тип"
+
+msgid "Lead source"
+msgstr "Источник"
+
+msgid "Lead status"
+msgstr "Статус"
+
+msgid "Lead reminder"
+msgstr "Напоминание"
+
+msgid "Open existing"
+msgstr "Открыть существующего"
+
+msgid "Create anyway"
+msgstr "Создать все равно"
+
+msgid "Back"
+msgstr "Назад"
+
+msgid "Skip"
+msgstr "Пропустить"
+
+msgid "Lead type buyer"
+msgstr "Покупатель"
+
+msgid "Lead type seller"
+msgstr "Продавец"
+
+msgid "Lead type tenant"
+msgstr "Арендатор"
+
+msgid "Lead type landlord"
+msgstr "Арендодатель"
+
+msgid "Lead type investor"
+msgstr "Инвестор"
+
+msgid "Lead type unknown"
+msgstr "Не определен"
+
+msgid "Lead source telegram"
+msgstr "Telegram"
+
+msgid "Lead source referral"
+msgstr "Рекомендация"
+
+msgid "Lead source ads"
+msgstr "Реклама"
+
+msgid "Lead source website"
+msgstr "Сайт"
+
+msgid "Lead source repeat"
+msgstr "Повторный клиент"
+
+msgid "Lead source other"
+msgstr "Другое"
+
+msgid "Lead status new"
+msgstr "Новый"
+
+msgid "Lead status contacted"
+msgstr "Связались"
+
+msgid "Lead status meeting"
+msgstr "Назначена встреча"
+
+msgid "Lead status negotiation"
+msgstr "Переговоры"
+
+msgid "Lead status won"
+msgstr "Успешно"
+
+msgid "Lead status lost"
+msgstr "Потерян"
+
+msgid "Lead status paused"
+msgstr "Пауза"
+
+msgid "Lead reminder in one hour"
+msgstr "Через 1 час"
+
+msgid "Lead reminder today evening"
+msgstr "Сегодня в 18:00"
+
+msgid "Lead reminder tomorrow morning"
+msgstr "Завтра в 10:00"
+
+msgid "Lead reminder in three days"
+msgstr "Через 3 дня"
+
+msgid "Lead reminder next week"
+msgstr "На следующей неделе"
+
+msgid "Lead reminder none"
+msgstr "Без напоминания"

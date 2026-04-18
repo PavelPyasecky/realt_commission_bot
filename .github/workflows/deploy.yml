@@ -1,0 +1,162 @@
+name: Deploy
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+env:
+  # --- Configuration ---
+  TARGET_BRANCH: "main"                     
+  DEPLOY_PATH: /root/realt_commission_bot 
+  DOCKER_COMPOSE_FILE: docker-compose.yml 
+  SERVICE_NAME: bot                       
+  # --------------------
+  REPO_URL: git@github.com:${{ github.repository }}.git
+
+jobs:
+  verify-changes:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Test Build
+        run: |
+          echo "Testing build for service: $SERVICE_NAME..."
+          export COMPOSE_PARALLEL_LIMIT=1
+          docker compose -f $DOCKER_COMPOSE_FILE build $SERVICE_NAME
+
+  deploy-production:
+    # Check that the branch matches the TARGET_BRANCH
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Agent
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          PROD_VPS_HOST: ${{ secrets.PROD_VPS_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan -H "$PROD_VPS_HOST" >> ~/.ssh/known_hosts
+          eval $(ssh-agent -s)
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $GITHUB_ENV
+
+      - name: Deploy to VPS
+        env:
+          PROD_VPS_USER: ${{ secrets.PROD_VPS_USER }}
+          PROD_VPS_HOST: ${{ secrets.PROD_VPS_HOST }}
+          PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          ENV_CONTENT=$(echo "$PROD_ENV_FILE" | base64 | tr -d '\n')
+          SHORT_SHA=$(echo $COMMIT_SHA | cut -c1-8)
+
+          ssh -A -o StrictHostKeyChecking=no $PROD_VPS_USER@$PROD_VPS_HOST << EOF
+            set -e
+
+            if [ -z "$DEPLOY_PATH" ] || [ "$DEPLOY_PATH" = "/" ]; then
+              echo "Error: Invalid DEPLOY_PATH"
+              exit 1
+            fi
+
+            echo "Deploying branch: $TARGET_BRANCH"
+            
+            mkdir -p $DEPLOY_PATH
+            cd $DEPLOY_PATH
+
+            mkdir -p ~/.ssh
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2>/dev/null
+
+            if [ ! -d ".git" ]; then
+              git init
+              git remote add origin $REPO_URL
+            fi
+
+            git remote set-url origin $REPO_URL
+            git fetch --all --prune
+            
+            git reset --hard $COMMIT_SHA
+            git clean -fdx
+
+            echo "$ENV_CONTENT" | base64 -d > .env
+            echo "VERSION=$SHORT_SHA" >> .env
+
+            function fail_pipeline {
+              echo "Pipeline failed! Printing logs..."
+              docker compose -f $DOCKER_COMPOSE_FILE ps -a
+              docker compose -f $DOCKER_COMPOSE_FILE logs --tail=100 $SERVICE_NAME
+              exit 1
+            }
+
+            echo "Stopping containers to free resources..."
+            docker compose -f $DOCKER_COMPOSE_FILE down --remove-orphans
+            docker system prune -f
+
+            export COMPOSE_PARALLEL_LIMIT=1
+            export DOCKER_BUILD_KIT=1
+
+            echo "Building $SERVICE_NAME..."
+            if ! docker compose -f $DOCKER_COMPOSE_FILE build --no-cache $SERVICE_NAME; then
+              fail_pipeline
+            fi
+
+            echo "Starting services..."
+            if ! docker compose -f $DOCKER_COMPOSE_FILE up -d --force-recreate; then
+              fail_pipeline
+            fi
+
+            echo "Waiting for $SERVICE_NAME to stabilize..."
+            for i in {1..5}; do
+              STATE=\$(docker compose -f $DOCKER_COMPOSE_FILE ps -q $SERVICE_NAME | xargs docker inspect -f '{{.State.Status}}' 2>/dev/null || echo "unknown")
+              
+              if [ "\$STATE" = "exited" ] || [ "\$STATE" = "dead" ]; then
+                 echo "Service crashed!"
+                 fail_pipeline
+              fi
+              
+              if [ "\$STATE" = "running" ]; then
+                echo "Service is running... check \$i/5"
+              fi
+              sleep 2
+            done
+
+            echo "Applying Alembic migrations..."
+            MIGRATION_PASSED=false
+            for i in {1..5}; do
+              if docker compose -f $DOCKER_COMPOSE_FILE exec -T $SERVICE_NAME alembic upgrade head; then
+                 MIGRATION_PASSED=true
+                 echo "Migrations applied successfully."
+                 break
+              fi
+              echo "Migration failed (DB starting?), retrying in 5s... (\$i/5)"
+              sleep 5
+            done
+
+            if [ "\$MIGRATION_PASSED" != "true" ]; then
+               echo "Failed to apply migrations."
+               fail_pipeline
+            fi
+
+            echo "Cleanup..."
+            docker image prune -f
+            
+            echo "Deployment Successful!"
+          EOF
