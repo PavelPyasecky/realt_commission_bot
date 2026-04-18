@@ -32,12 +32,13 @@ File:
 Trigger:
 
 - pushes to `main`
+- manual run via `workflow_dispatch`
 
 Behavior:
 
-- runs on pushes to `main`
-- requires a repository secret named `CD_DEPLOY_COMMAND`
-- executes the deploy command from that secret
+- `deploy` runs on pushes to `main`
+- deployment uses SSH to the production VPS
+- deployment applies Alembic migrations after the container is started
 
 Expected status check name:
 
@@ -67,46 +68,38 @@ Enable:
 
 Add these checks as required:
 
-- `CI / test`
-
-If you want deployment to be enforced after merge visibility as well, keep:
-
-- `CD / deploy`
+- `CI / tests`
 
 Usually:
 
-- `CI / test` is required for merge
+- `CI / tests` is required for merge
 - `CD / deploy` is observed on `main` after merge
 
 ## Repository secrets
 
-### `CD_DEPLOY_COMMAND`
+### Required production secrets
 
 Add in:
 
 - `Settings -> Secrets and variables -> Actions`
 
-Create secret:
+Create secrets:
 
-- `CD_DEPLOY_COMMAND`
+- `SSH_PRIVATE_KEY`
+- `PROD_VPS_USER`
+- `PROD_VPS_HOST`
+- `PROD_ENV_FILE`
 
-This secret must contain the full deploy command for your target platform.
-
-Examples:
-
-- `./scripts/deploy.sh`
-- `python deploy.py`
-- `curl -X POST "$RENDER_DEPLOY_HOOK_URL"`
-- `heroku container:release worker -a your-app-name`
+`PROD_ENV_FILE` must contain the full production `.env` content encoded as base64.
 
 ## Important note
 
-This repository currently contains a `Procfile`, but no deploy-provider config.
+This repository currently has a working VPS-oriented deploy pattern inherited from the previous deployment workflow.
 
 That means the workflow now supports:
 
 - CI on pull requests
 - CI on pushes to `main`
-- a safe CD entrypoint on pushes to `main`
+- production deployment on pushes to `main`
 
-To complete real deployment, `CD_DEPLOY_COMMAND` must be configured for the actual platform you use.
+To complete real deployment, the SSH/VPS secrets above must be present in GitHub Actions.
