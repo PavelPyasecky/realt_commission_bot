@@ -159,11 +159,6 @@ def _action_texts(_):
     return {
         _("Calculate commission"),
         _("CRM"),
-        _("Add lead"),
-        _("Today leads"),
-        _("All leads"),
-        _("Archived leads"),
-        _("Forwarded lead"),
         _("Last calculation"),
         _("Favorites"),
         _("Compare scenarios"),
