@@ -16,6 +16,7 @@ from app.bot.middlewares.user_activity import UserActivityMiddleware
 from app.infrastructure.database.models import Base
 from app.infrastructure.database.session import create_engine, create_sessionmaker
 from app.tasks.currency import update_usd_rate
+from aiogram.exceptions import TelegramNetworkError
 
 
 logging.basicConfig(
@@ -27,6 +28,8 @@ logging.basicConfig(
 logging.captureWarnings(True)
 
 logger = logging.getLogger(__name__)
+STARTUP_RETRY_DELAY_SECONDS = 5
+MAX_STARTUP_RETRIES = 5
 
 
 class ApplicationContext:
@@ -90,7 +93,20 @@ async def main():
             logger.info("Bot started via Polling!")
             if not app_ctx.dp:
                 raise RuntimeError("Dispatcher not initialized")
-            await app_ctx.dp.start_polling(app_ctx.bot)
+            for attempt in range(1, MAX_STARTUP_RETRIES + 1):
+                try:
+                    await app_ctx.dp.start_polling(app_ctx.bot)
+                    break
+                except TelegramNetworkError as error:
+                    if attempt == MAX_STARTUP_RETRIES:
+                        raise
+                    logger.warning(
+                        "Telegram network error during polling startup attempt %s/%s: %s",
+                        attempt,
+                        MAX_STARTUP_RETRIES,
+                        error,
+                    )
+                    await asyncio.sleep(STARTUP_RETRY_DELAY_SECONDS)
     except KeyboardInterrupt:
         logger.info("Bot stopped via KeyboardInterrupt")
     except Exception as e:
