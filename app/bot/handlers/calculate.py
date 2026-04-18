@@ -13,6 +13,7 @@ from app.services.stats import StatsService
 from app.services.user_preferences import UserPreferencesService
 from app.i18n import get_translator
 from app.bot.keyboards import (
+    build_crm_menu_keyboard,
     build_main_keyboard,
     build_result_keyboard,
     build_user_stats_keyboard,
@@ -157,6 +158,12 @@ def _period_label(_, period):
 def _action_texts(_):
     return {
         _("Calculate commission"),
+        _("CRM"),
+        _("Add lead"),
+        _("Today leads"),
+        _("All leads"),
+        _("Archived leads"),
+        _("Forwarded lead"),
         _("Last calculation"),
         _("Favorites"),
         _("Compare scenarios"),
@@ -198,6 +205,9 @@ async def calculate(message, sessionmaker):
             _("Please enter the property price in USD."),
             reply_markup=build_main_keyboard(_, is_admin=is_admin),
         )
+        return
+    if text == _("CRM"):
+        await message.answer("CRM", reply_markup=build_crm_menu_keyboard(_))
         return
     if text == _("Last calculation"):
         await _show_last_calculation(message)
