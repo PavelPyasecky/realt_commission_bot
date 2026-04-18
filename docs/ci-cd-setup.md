@@ -29,24 +29,24 @@ File:
 
 - `.github/workflows/cd.yml`
 
-Trigger:
+Triggers:
 
+- pull requests to `main`
 - pushes to `main`
 - manual run via `workflow_dispatch`
 
 Behavior:
 
-- `deploy` runs on pushes to `main`
+- `verify-changes` runs for pull requests and validates that the Docker image builds
+- `deploy-production` runs on pushes to `main`
 - deployment uses SSH to the production VPS
-- deployment mode is controlled by `DEPLOY_MODE`
-- supported modes:
-  - `procfile` - default, for this repository shape
-  - `docker-compose` - optional, only if the server has a compose file for this app
-- Alembic migrations run after code sync in both modes
+- deployment uses the in-repository `Dockerfile` and `docker-compose.yml`
+- Alembic migrations run after the container is started
 
-Expected status check name:
+Expected status check names:
 
-- `CD / deploy`
+- `CD / verify-changes`
+- `CD / deploy-production`
 
 ## Required GitHub settings
 
@@ -73,11 +73,13 @@ Enable:
 Add these checks as required:
 
 - `CI / tests`
+- `CD / verify-changes`
 
 Usually:
 
 - `CI / tests` is required for merge
-- `CD / deploy` is observed on `main` after merge
+- `CD / verify-changes` is required for merge
+- `CD / deploy-production` is observed on `main` after merge
 
 ## Repository secrets
 
@@ -94,41 +96,21 @@ Create secrets:
 - `PROD_VPS_HOST`
 - `PROD_ENV_FILE`
 
-Optional secret:
-
-- `DEPLOY_MODE`
-
 `PROD_ENV_FILE` must contain the full production `.env` content encoded as base64.
-
-`DEPLOY_MODE` values:
-
-- `procfile` - recommended default for this repository
-- `docker-compose` - only if your production server uses compose for this bot
-
-### Optional secrets for docker-compose mode
-
-If `DEPLOY_MODE=docker-compose`, add:
-
-- `DOCKER_COMPOSE_FILE`
-- `SERVICE_NAME`
-
-Defaults used by the workflow if these are omitted:
-
-- `docker-compose.yml`
-- `bot`
 
 ## Important note
 
-This repository does not contain a `docker-compose.yml` file. It does contain a `Procfile`:
+This repository now uses the same Timeweb VPS deployment model as the working `v2` branch:
 
-- `worker: python main.py`
+- `Dockerfile`
+- `docker-compose.yml`
+- SSH deploy to the VPS
+- compose rebuild / restart
+- Alembic migrations after container startup
 
 That means the workflow now supports:
 
 - CI on pull requests
 - CI on pushes to `main`
+- Docker build verification on pull requests
 - production deployment on pushes to `main`
-
-For this repository, the correct default production mode is `procfile`.
-
-Use `docker-compose` mode only if your VPS has an external compose setup that is intentionally not stored in this repository.
