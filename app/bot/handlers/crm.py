@@ -5,6 +5,7 @@ from datetime import datetime
 
 from aiogram import F, Router
 from aiogram.filters import Command
+from aiogram.dispatcher.event.bases import SkipHandler
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup
@@ -113,7 +114,7 @@ async def crm_menu_buttons(message: Message, state: FSMContext, sessionmaker) ->
     text = (message.text or "").strip()
 
     if not _is_crm_menu_text(text, _):
-        return
+        raise SkipHandler
 
     if text == _("CRM"):
         await _show_crm_root(message, state, _)
