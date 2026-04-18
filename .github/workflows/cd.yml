@@ -13,6 +13,7 @@ concurrency:
 env:
   TARGET_BRANCH: "main"
   DEPLOY_PATH: /root/realt_commission_bot
+  DEPLOY_MODE: procfile
   DOCKER_COMPOSE_FILE: docker-compose.yml
   SERVICE_NAME: bot
   REPO_URL: git@github.com:${{ github.repository }}.git
@@ -82,62 +83,112 @@ jobs:
 
             fail_pipeline() {
               echo "Pipeline failed! Printing logs..."
-              docker compose -f $DOCKER_COMPOSE_FILE ps -a
-              docker compose -f $DOCKER_COMPOSE_FILE logs --tail=100 $SERVICE_NAME
+              if [ "$DEPLOY_MODE" = "docker-compose" ] && [ -f "$DOCKER_COMPOSE_FILE" ]; then
+                docker compose -f $DOCKER_COMPOSE_FILE ps -a || true
+                docker compose -f $DOCKER_COMPOSE_FILE logs --tail=100 $SERVICE_NAME || true
+              elif command -v systemctl >/dev/null 2>&1; then
+                systemctl --no-pager --full status "$SERVICE_NAME" || true
+                journalctl -u "$SERVICE_NAME" -n 100 --no-pager || true
+              fi
               exit 1
             }
 
-            echo "Stopping containers to free resources..."
-            docker compose -f $DOCKER_COMPOSE_FILE down --remove-orphans
-            docker system prune -f
+            if [ "$DEPLOY_MODE" = "docker-compose" ]; then
+              if [ ! -f "$DOCKER_COMPOSE_FILE" ]; then
+                echo "Missing Docker Compose file: $DOCKER_COMPOSE_FILE"
+                echo "Set DEPLOY_MODE=procfile or provide the compose file on the server."
+                exit 1
+              fi
 
-            export COMPOSE_PARALLEL_LIMIT=1
-            export DOCKER_BUILDKIT=1
+              echo "Stopping containers to free resources..."
+              docker compose -f $DOCKER_COMPOSE_FILE down --remove-orphans
+              docker system prune -f
 
-            echo "Building $SERVICE_NAME..."
-            if ! docker compose -f $DOCKER_COMPOSE_FILE build --no-cache $SERVICE_NAME; then
-              fail_pipeline
-            fi
+              export COMPOSE_PARALLEL_LIMIT=1
+              export DOCKER_BUILDKIT=1
 
-            echo "Starting services..."
-            if ! docker compose -f $DOCKER_COMPOSE_FILE up -d --force-recreate; then
-              fail_pipeline
-            fi
-
-            echo "Waiting for $SERVICE_NAME to stabilize..."
-            for i in {1..5}; do
-              STATE=\$(docker compose -f $DOCKER_COMPOSE_FILE ps -q $SERVICE_NAME | xargs docker inspect -f '{{.State.Status}}' 2>/dev/null || echo "unknown")
-
-              if [ "\$STATE" = "exited" ] || [ "\$STATE" = "dead" ]; then
-                echo "Service crashed!"
+              echo "Building $SERVICE_NAME..."
+              if ! docker compose -f $DOCKER_COMPOSE_FILE build --no-cache $SERVICE_NAME; then
                 fail_pipeline
               fi
 
-              if [ "\$STATE" = "running" ]; then
-                echo "Service is running... check \$i/5"
+              echo "Starting services..."
+              if ! docker compose -f $DOCKER_COMPOSE_FILE up -d --force-recreate; then
+                fail_pipeline
               fi
-              sleep 2
-            done
 
-            echo "Applying Alembic migrations..."
-            MIGRATION_PASSED=false
-            for i in {1..5}; do
-              if docker compose -f $DOCKER_COMPOSE_FILE exec -T $SERVICE_NAME alembic upgrade head; then
-                MIGRATION_PASSED=true
-                echo "Migrations applied successfully."
-                break
+              echo "Waiting for $SERVICE_NAME to stabilize..."
+              for i in {1..5}; do
+                STATE=\$(docker compose -f $DOCKER_COMPOSE_FILE ps -q $SERVICE_NAME | xargs docker inspect -f '{{.State.Status}}' 2>/dev/null || echo "unknown")
+
+                if [ "\$STATE" = "exited" ] || [ "\$STATE" = "dead" ]; then
+                  echo "Service crashed!"
+                  fail_pipeline
+                fi
+
+                if [ "\$STATE" = "running" ]; then
+                  echo "Service is running... check \$i/5"
+                fi
+                sleep 2
+              done
+
+              echo "Applying Alembic migrations..."
+              MIGRATION_PASSED=false
+              for i in {1..5}; do
+                if docker compose -f $DOCKER_COMPOSE_FILE exec -T $SERVICE_NAME alembic upgrade head; then
+                  MIGRATION_PASSED=true
+                  echo "Migrations applied successfully."
+                  break
+                fi
+                echo "Migration failed (DB starting?), retrying in 5s... (\$i/5)"
+                sleep 5
+              done
+
+              if [ "\$MIGRATION_PASSED" != "true" ]; then
+                echo "Failed to apply migrations."
+                fail_pipeline
               fi
-              echo "Migration failed (DB starting?), retrying in 5s... (\$i/5)"
-              sleep 5
-            done
+            elif [ "$DEPLOY_MODE" = "procfile" ]; then
+              if ! command -v python3 >/dev/null 2>&1; then
+                echo "python3 is required for procfile deploy mode."
+                exit 1
+              fi
 
-            if [ "\$MIGRATION_PASSED" != "true" ]; then
-              echo "Failed to apply migrations."
-              fail_pipeline
+              if [ ! -f "requirements.txt" ] || [ ! -f "main.py" ] || [ ! -f "Procfile" ]; then
+                echo "Procfile deploy mode requires Procfile, requirements.txt, and main.py."
+                exit 1
+              fi
+
+              echo "Setting up Python environment..."
+              python3 -m venv .venv
+              . .venv/bin/activate
+              python -m pip install --upgrade pip
+              python -m pip install -r requirements.txt
+
+              if [ -f "alembic.ini" ]; then
+                echo "Applying Alembic migrations..."
+                alembic upgrade head
+              fi
+
+              if command -v systemctl >/dev/null 2>&1; then
+                echo "Restarting systemd service: $SERVICE_NAME"
+                sudo systemctl daemon-reload
+                sudo systemctl restart "$SERVICE_NAME"
+                sudo systemctl --no-pager --full status "$SERVICE_NAME"
+              else
+                echo "systemctl is not available on the target host for procfile deploy mode."
+                echo "Configure a service manager or switch DEPLOY_MODE to docker-compose."
+                exit 1
+              fi
+            else
+              echo "Unsupported DEPLOY_MODE: $DEPLOY_MODE"
+              exit 1
             fi
 
             echo "Cleanup..."
-            docker image prune -f
+            if command -v docker >/dev/null 2>&1; then
+              docker image prune -f || true
+            fi
 
             echo "Deployment Successful!"
           EOF

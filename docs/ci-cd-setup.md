@@ -38,7 +38,11 @@ Behavior:
 
 - `deploy` runs on pushes to `main`
 - deployment uses SSH to the production VPS
-- deployment applies Alembic migrations after the container is started
+- deployment mode is controlled by `DEPLOY_MODE`
+- supported modes:
+  - `procfile` - default, for this repository shape
+  - `docker-compose` - optional, only if the server has a compose file for this app
+- Alembic migrations run after code sync in both modes
 
 Expected status check name:
 
@@ -90,11 +94,34 @@ Create secrets:
 - `PROD_VPS_HOST`
 - `PROD_ENV_FILE`
 
+Optional secret:
+
+- `DEPLOY_MODE`
+
 `PROD_ENV_FILE` must contain the full production `.env` content encoded as base64.
+
+`DEPLOY_MODE` values:
+
+- `procfile` - recommended default for this repository
+- `docker-compose` - only if your production server uses compose for this bot
+
+### Optional secrets for docker-compose mode
+
+If `DEPLOY_MODE=docker-compose`, add:
+
+- `DOCKER_COMPOSE_FILE`
+- `SERVICE_NAME`
+
+Defaults used by the workflow if these are omitted:
+
+- `docker-compose.yml`
+- `bot`
 
 ## Important note
 
-This repository currently has a working VPS-oriented deploy pattern inherited from the previous deployment workflow.
+This repository does not contain a `docker-compose.yml` file. It does contain a `Procfile`:
+
+- `worker: python main.py`
 
 That means the workflow now supports:
 
@@ -102,4 +129,6 @@ That means the workflow now supports:
 - CI on pushes to `main`
 - production deployment on pushes to `main`
 
-To complete real deployment, the SSH/VPS secrets above must be present in GitHub Actions.
+For this repository, the correct default production mode is `procfile`.
+
+Use `docker-compose` mode only if your VPS has an external compose setup that is intentionally not stored in this repository.
