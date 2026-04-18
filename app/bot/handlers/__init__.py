@@ -11,9 +11,9 @@ from app.bot.handlers.unknown import router as unknown_router
 router = Router()
 router.include_router(start_router)
 router.include_router(stats_router)
-router.include_router(crm_router)
 router.include_router(buy_router)
 router.include_router(calculate_router)
+router.include_router(crm_router)
 router.include_router(inline_router)
 router.include_router(unknown_router)
 

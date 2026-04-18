@@ -10,15 +10,18 @@ def build_crm_menu_keyboard(_=None):
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text=_("Add lead") if _ else "Add lead"),
-                KeyboardButton(text=_("Today leads") if _ else "Today leads"),
+                KeyboardButton(text=_("Add lead") if _ else "Добавить лида"),
+                KeyboardButton(text=_("Today leads") if _ else "Лиды на сегодня"),
             ],
             [
-                KeyboardButton(text=_("All leads") if _ else "All leads"),
-                KeyboardButton(text=_("Archived leads") if _ else "Archived leads"),
+                KeyboardButton(text=_("All leads") if _ else "Все лиды"),
+                KeyboardButton(text=_("Archived leads") if _ else "Архив лидов"),
             ],
-            [KeyboardButton(text=_("Forwarded lead") if _ else "Forwarded lead")],
-            [KeyboardButton(text=_("Calculate commission") if _ else "Calculate commission")],
+            [KeyboardButton(text=_("Forwarded lead") if _ else "Лид из пересланного")],
+            [
+                KeyboardButton(text=_("Calculate commission") if _ else "Рассчитать комиссию"),
+                KeyboardButton(text=_("Back to main menu") if _ else "Назад в главное меню"),
+            ],
         ],
         resize_keyboard=True,
     )
@@ -28,21 +31,21 @@ def build_lead_card_keyboard(lead_id, archived=False, include_add_phone=False, _
     rows = [
         [
             InlineKeyboardButton(
-                text=_("Lead set reminder") if _ else "Напоминание",
+                    text=_("Lead set reminder") if _ else "Напоминание",
                 callback_data=f"lead:rem:{lead_id}",
             ),
             InlineKeyboardButton(
-                text=_("Lead change status") if _ else "Статус",
+                    text=_("Lead change status") if _ else "Статус",
                 callback_data=f"lead:status:{lead_id}",
             ),
         ],
         [
             InlineKeyboardButton(
-                text=_("Lead mark called") if _ else "Отмечен звонок",
+                    text=_("Lead mark called") if _ else "Отметить звонок",
                 callback_data=f"lead:call:{lead_id}",
             ),
             InlineKeyboardButton(
-                text=_("Lead edit") if _ else "Изменить",
+                    text=_("Lead edit") if _ else "Редактировать",
                 callback_data=f"lead:edit:{lead_id}",
             ),
         ],
@@ -69,13 +72,13 @@ def build_lead_card_keyboard(lead_id, archived=False, include_add_phone=False, _
             )
         ]
     )
-    rows.append([InlineKeyboardButton(text=_("CRM") if _ else "CRM", callback_data="crm:menu")])
+    rows.append([InlineKeyboardButton(text=_("Back to CRM") if _ else "Назад в CRM", callback_data="crm:menu")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def build_lead_list_keyboard(leads, _=None):
     rows = [[InlineKeyboardButton(text=lead.name[:32], callback_data=f"lead:open:{lead.id}")] for lead in leads]
-    rows.append([InlineKeyboardButton(text=_("CRM") if _ else "CRM", callback_data="crm:menu")])
+    rows.append([InlineKeyboardButton(text=_("Back to CRM") if _ else "Назад в CRM", callback_data="crm:menu")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -86,7 +89,7 @@ def build_lead_type_keyboard(prefix="create:type", lead_id=None, _=None):
     for value, label in LEAD_TYPE_LABELS.items():
         callback = f"{prefix}:{value}" if lead_id is None else f"{prefix}:{lead_id}:{value}"
         rows.append([InlineKeyboardButton(text=label, callback_data=callback)])
-    rows.append([InlineKeyboardButton(text=_("CRM") if _ else "CRM", callback_data="crm:menu")])
+    rows.append([InlineKeyboardButton(text=_("Back to CRM") if _ else "Назад в CRM", callback_data="crm:menu")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -97,7 +100,7 @@ def build_source_keyboard(prefix="create:source", lead_id=None, _=None):
     for value, label in SOURCE_LABELS.items():
         callback = f"{prefix}:{value}" if lead_id is None else f"{prefix}:{lead_id}:{value}"
         rows.append([InlineKeyboardButton(text=label, callback_data=callback)])
-    rows.append([InlineKeyboardButton(text=_("CRM") if _ else "CRM", callback_data="crm:menu")])
+    rows.append([InlineKeyboardButton(text=_("Back to CRM") if _ else "Назад в CRM", callback_data="crm:menu")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -108,7 +111,7 @@ def build_status_keyboard(lead_id, _=None):
         [InlineKeyboardButton(text=label, callback_data=f"status:set:{lead_id}:{value}")]
         for value, label in STATUS_LABELS.items()
     ]
-    rows.append([InlineKeyboardButton(text=_("Back") if _ else "Back", callback_data=f"lead:open:{lead_id}")])
+    rows.append([InlineKeyboardButton(text=_("Back") if _ else "Назад", callback_data=f"lead:open:{lead_id}")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -119,7 +122,7 @@ def build_reminder_keyboard(prefix="create:rem", lead_id=None, _=None):
     for value, label in REMINDER_PRESETS.items():
         callback = f"{prefix}:{value}" if lead_id is None else f"{prefix}:{lead_id}:{value}"
         rows.append([InlineKeyboardButton(text=label, callback_data=callback)])
-    rows.append([InlineKeyboardButton(text=_("CRM") if _ else "CRM", callback_data="crm:menu")])
+    rows.append([InlineKeyboardButton(text=_("Back to CRM") if _ else "Назад в CRM", callback_data="crm:menu")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -128,17 +131,17 @@ def build_edit_menu_keyboard(lead_id, _=None):
         inline_keyboard=[
             [
                 InlineKeyboardButton(text=_("Lead name") if _ else "Lead name", callback_data=f"edit:name:{lead_id}"),
-                InlineKeyboardButton(text=_("Lead phone") if _ else "Lead phone", callback_data=f"edit:phone:{lead_id}"),
+                InlineKeyboardButton(text=_("Lead phone") if _ else "Телефон", callback_data=f"edit:phone:{lead_id}"),
             ],
             [
-                InlineKeyboardButton(text=_("Lead type") if _ else "Lead type", callback_data=f"edit:type:{lead_id}"),
-                InlineKeyboardButton(text=_("Lead source") if _ else "Lead source", callback_data=f"edit:source:{lead_id}"),
+                InlineKeyboardButton(text=_("Lead type") if _ else "Тип", callback_data=f"edit:type:{lead_id}"),
+                InlineKeyboardButton(text=_("Lead source") if _ else "Источник", callback_data=f"edit:source:{lead_id}"),
             ],
             [
-                InlineKeyboardButton(text=_("Lead status") if _ else "Lead status", callback_data=f"edit:status:{lead_id}"),
-                InlineKeyboardButton(text=_("Lead reminder") if _ else "Lead reminder", callback_data=f"edit:rem:{lead_id}"),
+                InlineKeyboardButton(text=_("Lead status") if _ else "Статус", callback_data=f"edit:status:{lead_id}"),
+                InlineKeyboardButton(text=_("Lead reminder") if _ else "Напоминание", callback_data=f"edit:rem:{lead_id}"),
             ],
-            [InlineKeyboardButton(text=_("Back") if _ else "Back", callback_data=f"lead:open:{lead_id}")],
+            [InlineKeyboardButton(text=_("Back") if _ else "Назад", callback_data=f"lead:open:{lead_id}")],
         ]
     )
 
@@ -146,9 +149,9 @@ def build_edit_menu_keyboard(lead_id, _=None):
 def build_duplicate_keyboard(existing_lead_id, _=None):
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=_("Open existing") if _ else "Open existing", callback_data=f"dup:open:{existing_lead_id}")],
-            [InlineKeyboardButton(text=_("Create anyway") if _ else "Create anyway", callback_data="dup:create")],
-            [InlineKeyboardButton(text=_("CRM") if _ else "CRM", callback_data="crm:menu")],
+            [InlineKeyboardButton(text=_("Open existing") if _ else "Открыть существующий", callback_data=f"dup:open:{existing_lead_id}")],
+            [InlineKeyboardButton(text=_("Create anyway") if _ else "Создать все равно", callback_data="dup:create")],
+            [InlineKeyboardButton(text=_("Back to CRM") if _ else "Назад в CRM", callback_data="crm:menu")],
         ]
     )
 
@@ -158,12 +161,12 @@ def build_skip_phone_keyboard(edit_mode=False, lead_id=None, _=None):
         return InlineKeyboardMarkup(
             inline_keyboard=[
                 [InlineKeyboardButton(text=_("Skip") if _ else "Skip", callback_data=f"edit:phoneclear:{lead_id}")],
-                [InlineKeyboardButton(text=_("CRM") if _ else "CRM", callback_data="crm:menu")],
+                [InlineKeyboardButton(text=_("Back to CRM") if _ else "Назад в CRM", callback_data="crm:menu")],
             ]
         )
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=_("Skip") if _ else "Skip", callback_data="create:phone:skip")],
-            [InlineKeyboardButton(text=_("CRM") if _ else "CRM", callback_data="crm:menu")],
+            [InlineKeyboardButton(text=_("Back to CRM") if _ else "Назад в CRM", callback_data="crm:menu")],
         ]
     )

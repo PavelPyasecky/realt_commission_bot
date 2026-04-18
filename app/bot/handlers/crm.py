@@ -56,6 +56,18 @@ def _is_admin(message: Message) -> bool:
     )
 
 
+def _is_crm_menu_text(text: str, _) -> bool:
+    return text in {
+        _("CRM"),
+        _("Add lead"),
+        _("Today leads"),
+        _("All leads"),
+        _("Archived leads"),
+        _("Forwarded lead"),
+        _("Back to main menu"),
+    }
+
+
 def _format_lead_card(lead) -> str:
     return (
         f"{lead.name}\n"
@@ -100,8 +112,16 @@ async def crm_menu_buttons(message: Message, state: FSMContext, sessionmaker) ->
     _ = get_translator()
     text = (message.text or "").strip()
 
+    if not _is_crm_menu_text(text, _):
+        return
+
     if text == _("CRM"):
         await _show_crm_root(message, state, _)
+        return
+
+    if text == _("Back to main menu"):
+        await state.clear()
+        await message.answer(_("Welcome message"), reply_markup=build_main_keyboard(_, is_admin=_is_admin(message)))
         return
 
     if text == _("Add lead"):
@@ -228,7 +248,11 @@ async def forwarded_to_lead(message: Message, state: FSMContext, sessionmaker) -
 async def crm_menu(callback: CallbackQuery, state: FSMContext) -> None:
     _ = get_translator()
     await state.clear()
-    await _edit_or_answer(callback, _("CRM"), build_crm_menu_keyboard(_))
+    is_admin = (
+        (callback.message and callback.message.chat and callback.message.chat.id in config.ADMIN_ID)
+        or (callback.from_user and callback.from_user.id in config.ADMIN_ID)
+    )
+    await _edit_or_answer(callback, _("CRM"), build_main_keyboard(_, is_admin=is_admin))
 
 
 @router.callback_query(F.data.startswith("create:type:"))

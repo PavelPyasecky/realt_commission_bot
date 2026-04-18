@@ -303,6 +303,9 @@ msgstr "Назад"
 msgid "Skip"
 msgstr "Пропустить"
 
+msgid "Back to main menu"
+msgstr "↩️ В главное меню"
+
 msgid "Lead type buyer"
 msgstr "Покупатель"
 
