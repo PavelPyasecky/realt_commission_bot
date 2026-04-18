@@ -1,15 +1,19 @@
 FROM python:3.12-slim-bookworm
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
 ENV PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    UV_PROJECT_ENVIRONMENT="/app/.venv" \
+    PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
 
-COPY requirements.txt ./
+COPY pyproject.toml uv.lock ./
 
-RUN python -m pip install --upgrade pip \
-    && python -m pip install -r requirements.txt
+RUN uv sync --frozen --no-dev
 
 COPY . .
 
-CMD ["python", "main.py"]
+RUN python -m app.tools.compilemessages
+
+CMD ["python", "-m", "app.main"]
