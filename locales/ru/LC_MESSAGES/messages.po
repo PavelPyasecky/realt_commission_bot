@@ -173,3 +173,132 @@ msgstr "Активные за 7 дней"
 
 msgid "Active in last 30 days"
 msgstr "Активные за 30 дней"
+
+msgid "CRM"
+msgstr "👥 Лиды"
+
+msgid "Add lead"
+msgstr "➕ Добавить лида"
+
+msgid "Today leads"
+msgstr "📅 Лиды на сегодня"
+
+msgid "All leads"
+msgstr "📋 Все лиды"
+
+msgid "Archived leads"
+msgstr "🗄 Архив лидов"
+
+msgid "Forwarded lead"
+msgstr "📨 Лид из пересланного"
+
+msgid "Choose lead type."
+msgstr "Выберите тип лида."
+
+msgid "Choose lead source."
+msgstr "Выберите источник лида."
+
+msgid "Send the lead name."
+msgstr "Отправьте имя лида."
+
+msgid "Send the phone number or skip this field."
+msgstr "Отправьте номер телефона или пропустите этот шаг."
+
+msgid "Choose the first reminder."
+msgstr "Выберите первое напоминание."
+
+msgid "Lead draft expired. Start again from CRM."
+msgstr "Черновик лида устарел. Начните заново из CRM."
+
+msgid "No active leads yet."
+msgstr "Пока нет активных лидов."
+
+msgid "No archived leads."
+msgstr "Пока нет архивных лидов."
+
+msgid "No reminders for today."
+msgstr "На сегодня напоминаний нет."
+
+msgid "Overdue"
+msgstr "Просрочено"
+
+msgid "Today"
+msgstr "Сегодня"
+
+msgid "Forward a client message to create a lead."
+msgstr "Перешлите сообщение клиента, чтобы создать лида."
+
+msgid "Possible duplicate found: {name}"
+msgstr "Найден возможный дубль: {name}"
+
+msgid "Edit {name}"
+msgstr "Редактирование: {name}"
+
+msgid "Choose the new status."
+msgstr "Выберите новый статус."
+
+msgid "Choose the reminder time."
+msgstr "Выберите время напоминания."
+
+msgid "Send the new lead name."
+msgstr "Отправьте новое имя лида."
+
+msgid "Send the new phone number."
+msgstr "Отправьте новый номер телефона."
+
+msgid "Choose the new lead type."
+msgstr "Выберите новый тип лида."
+
+msgid "Choose the new lead source."
+msgstr "Выберите новый источник лида."
+
+msgid "Name is required. Send the lead name."
+msgstr "Имя обязательно. Отправьте имя лида."
+
+msgid "Lead set reminder"
+msgstr "Напоминание"
+
+msgid "Lead change status"
+msgstr "Статус"
+
+msgid "Lead mark called"
+msgstr "Звонок выполнен"
+
+msgid "Lead edit"
+msgstr "Редактировать"
+
+msgid "Lead phone"
+msgstr "Телефон"
+
+msgid "Lead restore"
+msgstr "Восстановить"
+
+msgid "Lead archive"
+msgstr "В архив"
+
+msgid "Lead name"
+msgstr "Имя"
+
+msgid "Lead type"
+msgstr "Тип"
+
+msgid "Lead source"
+msgstr "Источник"
+
+msgid "Lead status"
+msgstr "Статус"
+
+msgid "Lead reminder"
+msgstr "Напоминание"
+
+msgid "Open existing"
+msgstr "Открыть существующего"
+
+msgid "Create anyway"
+msgstr "Создать все равно"
+
+msgid "Back"
+msgstr "Назад"
+
+msgid "Skip"
+msgstr "Пропустить"
