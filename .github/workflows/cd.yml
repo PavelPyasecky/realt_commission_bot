@@ -1,6 +1,9 @@
 name: CD
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
@@ -18,7 +21,25 @@ env:
   REPO_URL: git@github.com:${{ github.repository }}.git
 
 jobs:
-  deploy:
+  verify-changes:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Test Build
+        run: |
+          echo "Testing build for service: $SERVICE_NAME..."
+          export COMPOSE_PARALLEL_LIMIT=1
+          docker compose -f $DOCKER_COMPOSE_FILE build $SERVICE_NAME
+
+  deploy-production:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -82,10 +103,15 @@ jobs:
 
             fail_pipeline() {
               echo "Pipeline failed! Printing logs..."
-              docker compose -f $DOCKER_COMPOSE_FILE ps -a
-              docker compose -f $DOCKER_COMPOSE_FILE logs --tail=100 $SERVICE_NAME
+              docker compose -f $DOCKER_COMPOSE_FILE ps -a || true
+              docker compose -f $DOCKER_COMPOSE_FILE logs --tail=100 $SERVICE_NAME || true
               exit 1
             }
+
+            if [ ! -f "$DOCKER_COMPOSE_FILE" ]; then
+              echo "Missing Docker Compose file: $DOCKER_COMPOSE_FILE"
+              exit 1
+            fi
 
             echo "Stopping containers to free resources..."
             docker compose -f $DOCKER_COMPOSE_FILE down --remove-orphans
@@ -137,7 +163,7 @@ jobs:
             fi
 
             echo "Cleanup..."
-            docker image prune -f
+            docker image prune -f || true
 
             echo "Deployment Successful!"
           EOF

@@ -29,20 +29,24 @@ File:
 
 - `.github/workflows/cd.yml`
 
-Trigger:
+Triggers:
 
+- pull requests to `main`
 - pushes to `main`
 - manual run via `workflow_dispatch`
 
 Behavior:
 
-- `deploy` runs on pushes to `main`
+- `verify-changes` runs for pull requests and validates that the Docker image builds
+- `deploy-production` runs on pushes to `main`
 - deployment uses SSH to the production VPS
-- deployment applies Alembic migrations after the container is started
+- deployment uses the in-repository `Dockerfile` and `docker-compose.yml`
+- Alembic migrations run after the container is started
 
-Expected status check name:
+Expected status check names:
 
-- `CD / deploy`
+- `CD / verify-changes`
+- `CD / deploy-production`
 
 ## Required GitHub settings
 
@@ -69,11 +73,13 @@ Enable:
 Add these checks as required:
 
 - `CI / tests`
+- `CD / verify-changes`
 
 Usually:
 
 - `CI / tests` is required for merge
-- `CD / deploy` is observed on `main` after merge
+- `CD / verify-changes` is required for merge
+- `CD / deploy-production` is observed on `main` after merge
 
 ## Repository secrets
 
@@ -94,12 +100,17 @@ Create secrets:
 
 ## Important note
 
-This repository currently has a working VPS-oriented deploy pattern inherited from the previous deployment workflow.
+This repository now uses the same Timeweb VPS deployment model as the working `v2` branch:
+
+- `Dockerfile`
+- `docker-compose.yml`
+- SSH deploy to the VPS
+- compose rebuild / restart
+- Alembic migrations after container startup
 
 That means the workflow now supports:
 
 - CI on pull requests
 - CI on pushes to `main`
+- Docker build verification on pull requests
 - production deployment on pushes to `main`
-
-To complete real deployment, the SSH/VPS secrets above must be present in GitHub Actions.
