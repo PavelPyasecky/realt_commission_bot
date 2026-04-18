@@ -1,9 +1,9 @@
 name: Deploy
 on:
   push:
-    branches: [ "v2" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "v2" ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 concurrency:
@@ -12,7 +12,7 @@ concurrency:
 
 env:
   # --- Configuration ---
-  TARGET_BRANCH: "v2"                     
+  TARGET_BRANCH: "main"                     
   DEPLOY_PATH: /root/realt_commission_bot 
   DOCKER_COMPOSE_FILE: docker-compose.yml 
   SERVICE_NAME: bot                       
@@ -39,7 +39,7 @@ jobs:
 
   deploy-production:
     # Check that the branch matches the TARGET_BRANCH
-    if: github.ref == 'refs/heads/v2'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
