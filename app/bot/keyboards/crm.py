@@ -28,21 +28,21 @@ def build_lead_card_keyboard(lead_id, archived=False, include_add_phone=False, _
     rows = [
         [
             InlineKeyboardButton(
-                text=_("Lead set reminder") if _ else "Set reminder",
+                text=_("Lead set reminder") if _ else "Напоминание",
                 callback_data=f"lead:rem:{lead_id}",
             ),
             InlineKeyboardButton(
-                text=_("Lead change status") if _ else "Change status",
+                text=_("Lead change status") if _ else "Статус",
                 callback_data=f"lead:status:{lead_id}",
             ),
         ],
         [
             InlineKeyboardButton(
-                text=_("Lead mark called") if _ else "Mark called",
+                text=_("Lead mark called") if _ else "Отмечен звонок",
                 callback_data=f"lead:call:{lead_id}",
             ),
             InlineKeyboardButton(
-                text=_("Lead edit") if _ else "Edit",
+                text=_("Lead edit") if _ else "Изменить",
                 callback_data=f"lead:edit:{lead_id}",
             ),
         ],
@@ -51,7 +51,7 @@ def build_lead_card_keyboard(lead_id, archived=False, include_add_phone=False, _
         rows.append(
             [
                 InlineKeyboardButton(
-                    text=_("Lead phone") if _ else "Add phone",
+                    text=_("Lead phone") if _ else "Добавить телефон",
                     callback_data=f"edit:phone:{lead_id}",
                 )
             ]
@@ -59,12 +59,12 @@ def build_lead_card_keyboard(lead_id, archived=False, include_add_phone=False, _
     rows.append(
         [
             InlineKeyboardButton(
-                text=_("Lead restore") if _ else "Restore",
+                text=_("Lead restore") if _ else "Восстановить",
                 callback_data=f"lead:restore:{lead_id}",
             )
             if archived
             else InlineKeyboardButton(
-                text=_("Lead archive") if _ else "Archive",
+                text=_("Lead archive") if _ else "В архив",
                 callback_data=f"lead:archive:{lead_id}",
             )
         ]
@@ -127,16 +127,16 @@ def build_edit_menu_keyboard(lead_id, _=None):
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text=_("Lead name") if _ else "Name", callback_data=f"edit:name:{lead_id}"),
-                InlineKeyboardButton(text=_("Lead phone") if _ else "Phone", callback_data=f"edit:phone:{lead_id}"),
+                InlineKeyboardButton(text=_("Lead name") if _ else "Lead name", callback_data=f"edit:name:{lead_id}"),
+                InlineKeyboardButton(text=_("Lead phone") if _ else "Lead phone", callback_data=f"edit:phone:{lead_id}"),
             ],
             [
-                InlineKeyboardButton(text=_("Lead type") if _ else "Type", callback_data=f"edit:type:{lead_id}"),
-                InlineKeyboardButton(text=_("Lead source") if _ else "Source", callback_data=f"edit:source:{lead_id}"),
+                InlineKeyboardButton(text=_("Lead type") if _ else "Lead type", callback_data=f"edit:type:{lead_id}"),
+                InlineKeyboardButton(text=_("Lead source") if _ else "Lead source", callback_data=f"edit:source:{lead_id}"),
             ],
             [
-                InlineKeyboardButton(text=_("Lead status") if _ else "Status", callback_data=f"edit:status:{lead_id}"),
-                InlineKeyboardButton(text=_("Lead reminder") if _ else "Reminder", callback_data=f"edit:rem:{lead_id}"),
+                InlineKeyboardButton(text=_("Lead status") if _ else "Lead status", callback_data=f"edit:status:{lead_id}"),
+                InlineKeyboardButton(text=_("Lead reminder") if _ else "Lead reminder", callback_data=f"edit:rem:{lead_id}"),
             ],
             [InlineKeyboardButton(text=_("Back") if _ else "Back", callback_data=f"lead:open:{lead_id}")],
         ]

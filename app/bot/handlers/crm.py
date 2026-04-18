@@ -7,7 +7,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup
 
 from app.bot.keyboards import build_crm_menu_keyboard, build_main_keyboard
 from app.bot.keyboards.crm import (
@@ -34,8 +34,11 @@ FORWARDED_DRAFT_KEY = "crm_forwarded_draft"
 
 
 class CRMFlow(StatesGroup):
+    create_type = State()
+    create_source = State()
     create_name = State()
     create_phone = State()
+    create_reminder = State()
     edit_name = State()
     edit_phone = State()
 
@@ -79,7 +82,10 @@ async def _show_lead_card(message: Message, lead, _) -> None:
 
 async def _edit_or_answer(callback: CallbackQuery, text: str, reply_markup) -> None:
     if callback.message:
-        await callback.message.edit_text(text, reply_markup=reply_markup)
+        if isinstance(reply_markup, InlineKeyboardMarkup):
+            await callback.message.edit_text(text, reply_markup=reply_markup)
+        else:
+            await callback.message.answer(text, reply_markup=reply_markup)
     await callback.answer()
 
 
@@ -89,80 +95,74 @@ async def crm_root(message: Message, state: FSMContext) -> None:
     await _show_crm_root(message, state, _)
 
 
-@router.message(F.text == "CRM")
-async def crm_root_button(message: Message, state: FSMContext) -> None:
+@router.message(F.text)
+async def crm_menu_buttons(message: Message, state: FSMContext, sessionmaker) -> None:
     _ = get_translator()
-    await _show_crm_root(message, state, _)
+    text = (message.text or "").strip()
 
-
-@router.message(F.text == "Add lead")
-async def crm_add_button(message: Message, state: FSMContext) -> None:
-    _ = get_translator()
-    await state.update_data(**{CREATE_DRAFT_KEY: {}})
-    await state.set_state(CRMFlow.create_name)
-    await message.answer(_("Choose lead type."), reply_markup=build_lead_type_keyboard("create:type", _=_))
-
-
-@router.message(F.text == "All leads")
-async def crm_list_button(message: Message, sessionmaker) -> None:
-    _ = get_translator()
-    async with sessionmaker() as session:
-        leads = await lead_service.list_leads(session, message.from_user.id, archived=False)
-    if not leads:
-        await message.answer(_("No active leads yet."), reply_markup=build_crm_menu_keyboard(_))
+    if text == _("CRM"):
+        await _show_crm_root(message, state, _)
         return
-    lines = [
-        f"{index}. {lead.name} - {STATUS_LABELS.get(lead.status, lead.status)} - {_format_dt(lead.next_call_at)}"
-        for index, lead in enumerate(leads, start=1)
-    ]
-    await message.answer(_("All leads") + "\n\n" + "\n".join(lines), reply_markup=build_lead_list_keyboard(leads, _=_))
 
-
-@router.message(F.text == "Archived leads")
-async def crm_archived_button(message: Message, sessionmaker) -> None:
-    _ = get_translator()
-    async with sessionmaker() as session:
-        leads = await lead_service.list_leads(session, message.from_user.id, archived=True)
-    if not leads:
-        await message.answer(_("No archived leads."), reply_markup=build_crm_menu_keyboard(_))
+    if text == _("Add lead"):
+        await state.update_data(**{CREATE_DRAFT_KEY: {}})
+        await state.set_state(CRMFlow.create_type)
+        await message.answer(_("Choose lead type."), reply_markup=build_lead_type_keyboard("create:type", _=_))
         return
-    lines = [
-        f"{index}. {lead.name} - {STATUS_LABELS.get(lead.status, lead.status)} - {_format_dt(lead.next_call_at)}"
-        for index, lead in enumerate(leads, start=1)
-    ]
-    await message.answer(_("Archived leads") + "\n\n" + "\n".join(lines), reply_markup=build_lead_list_keyboard(leads, archived=True, _=_))
 
-
-@router.message(F.text == "Today leads")
-async def crm_today_button(message: Message, sessionmaker) -> None:
-    _ = get_translator()
-    async with sessionmaker() as session:
-        overdue, today = await lead_service.list_today(session, message.from_user.id)
-    if not overdue and not today:
-        await message.answer(_("No reminders for today."), reply_markup=build_crm_menu_keyboard(_))
+    if text == _("All leads"):
+        async with sessionmaker() as session:
+            leads = await lead_service.list_leads(session, message.from_user.id, archived=False)
+        if not leads:
+            await message.answer(_("No active leads yet."), reply_markup=build_crm_menu_keyboard(_))
+            return
+        lines = [
+            f"{index}. {lead.name} - {STATUS_LABELS.get(lead.status, lead.status)} - {_format_dt(lead.next_call_at)}"
+            for index, lead in enumerate(leads, start=1)
+        ]
+        await message.answer(_("All leads") + "\n\n" + "\n".join(lines), reply_markup=build_lead_list_keyboard(leads, _=_))
         return
-    sections = []
-    if overdue:
-        sections.append(_("Overdue"))
-        sections.extend(
-            f"- {lead.name} - {STATUS_LABELS.get(lead.status, lead.status)} - {_format_dt(lead.next_call_at)}"
-            for lead in overdue
-        )
-    if today:
-        if sections:
-            sections.append("")
-        sections.append(_("Today"))
-        sections.extend(
-            f"- {lead.name} - {STATUS_LABELS.get(lead.status, lead.status)} - {_format_dt(lead.next_call_at)}"
-            for lead in today
-        )
-    await message.answer("\n".join(sections), reply_markup=build_lead_list_keyboard(overdue + today, _=_))
 
+    if text == _("Archived leads"):
+        async with sessionmaker() as session:
+            leads = await lead_service.list_leads(session, message.from_user.id, archived=True)
+        if not leads:
+            await message.answer(_("No archived leads."), reply_markup=build_crm_menu_keyboard(_))
+            return
+        lines = [
+            f"{index}. {lead.name} - {STATUS_LABELS.get(lead.status, lead.status)} - {_format_dt(lead.next_call_at)}"
+            for index, lead in enumerate(leads, start=1)
+        ]
+        await message.answer(_("Archived leads") + "\n\n" + "\n".join(lines), reply_markup=build_lead_list_keyboard(leads, archived=True, _=_))
+        return
 
-@router.message(F.text == "Forwarded lead")
-async def crm_forward_hint(message: Message) -> None:
-    _ = get_translator()
-    await message.answer(_("Forward a client message to create a lead."), reply_markup=build_crm_menu_keyboard(_))
+    if text == _("Today leads"):
+        async with sessionmaker() as session:
+            overdue, today = await lead_service.list_today(session, message.from_user.id)
+        if not overdue and not today:
+            await message.answer(_("No reminders for today."), reply_markup=build_crm_menu_keyboard(_))
+            return
+        sections = []
+        if overdue:
+            sections.append(_("Overdue"))
+            sections.extend(
+                f"- {lead.name} - {STATUS_LABELS.get(lead.status, lead.status)} - {_format_dt(lead.next_call_at)}"
+                for lead in overdue
+            )
+        if today:
+            if sections:
+                sections.append("")
+            sections.append(_("Today"))
+            sections.extend(
+                f"- {lead.name} - {STATUS_LABELS.get(lead.status, lead.status)} - {_format_dt(lead.next_call_at)}"
+                for lead in today
+            )
+        await message.answer("\n".join(sections), reply_markup=build_lead_list_keyboard(overdue + today, _=_))
+        return
+
+    if text == _("Forwarded lead"):
+        await message.answer(_("Forward a client message to create a lead."), reply_markup=build_crm_menu_keyboard(_))
+        return
 
 
 @router.message(F.forward_origin.as_("forward_origin"))
@@ -239,6 +239,7 @@ async def crm_add_type(callback: CallbackQuery, state: FSMContext) -> None:
     draft = dict(data.get(CREATE_DRAFT_KEY, {}))
     draft["lead_type"] = value
     await state.update_data(**{CREATE_DRAFT_KEY: draft})
+    await state.set_state(CRMFlow.create_source)
     await _edit_or_answer(callback, _("Choose lead source."), build_source_keyboard("create:source", _=_))
 
 
@@ -257,10 +258,10 @@ async def crm_add_source(callback: CallbackQuery, state: FSMContext) -> None:
 @router.callback_query(F.data == "create:phone:skip")
 async def crm_skip_phone(callback: CallbackQuery, state: FSMContext) -> None:
     _ = get_translator()
-    await state.clear()
     data = await state.get_data()
-    draft = data.get(CREATE_DRAFT_KEY, {})
+    draft = dict(data.get(CREATE_DRAFT_KEY, {}))
     await state.update_data(**{CREATE_DRAFT_KEY: draft})
+    await state.set_state(CRMFlow.create_reminder)
     await _edit_or_answer(callback, _("Choose the first reminder."), build_reminder_keyboard("create:rem", _=_))
 
 
@@ -556,8 +557,7 @@ async def crm_create_phone(message: Message, state: FSMContext) -> None:
     draft = (await state.get_data()).get(CREATE_DRAFT_KEY, {})
     draft["phone"] = (message.text or "").strip()
     await state.update_data(**{CREATE_DRAFT_KEY: draft})
-    await state.clear()
-    await state.update_data(**{CREATE_DRAFT_KEY: draft})
+    await state.set_state(CRMFlow.create_reminder)
     await message.answer(_("Choose the first reminder."), reply_markup=build_reminder_keyboard("create:rem", _=_))
 
 

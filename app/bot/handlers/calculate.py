@@ -207,7 +207,7 @@ async def calculate(message, sessionmaker):
         )
         return
     if text == _("CRM"):
-        await message.answer("CRM", reply_markup=build_crm_menu_keyboard(_))
+        await message.answer(_("CRM"), reply_markup=build_crm_menu_keyboard(_))
         return
     if text == _("Last calculation"):
         await _show_last_calculation(message)
