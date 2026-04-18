@@ -18,7 +18,7 @@ def build_crm_menu_keyboard(_=None):
                 KeyboardButton(text=_("Archived leads") if _ else "Архив лидов"),
             ],
             [KeyboardButton(text=_("Forwarded lead") if _ else "Лид из пересланного")],
-            [KeyboardButton(text=_("Calculate commission") if _ else "Calculate commission")],
+            [KeyboardButton(text=_("Calculate commission") if _ else "Рассчитать комиссию")],
         ],
         resize_keyboard=True,
     )
@@ -75,7 +75,7 @@ def build_lead_card_keyboard(lead_id, archived=False, include_add_phone=False, _
 
 def build_lead_list_keyboard(leads, _=None):
     rows = [[InlineKeyboardButton(text=lead.name[:32], callback_data=f"lead:open:{lead.id}")] for lead in leads]
-    rows.append([InlineKeyboardButton(text=_("CRM") if _ else "CRM", callback_data="crm:menu")])
+    rows.append([InlineKeyboardButton(text=_("CRM") if _ else "Лиды", callback_data="crm:menu")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
