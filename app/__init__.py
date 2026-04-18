@@ -1,0 +1,1 @@
+"""Realt commission bot application."""
