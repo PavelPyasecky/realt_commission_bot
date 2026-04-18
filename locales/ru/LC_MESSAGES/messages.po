@@ -302,3 +302,78 @@ msgstr "Назад"
 
 msgid "Skip"
 msgstr "Пропустить"
+
+msgid "Lead type buyer"
+msgstr "Покупатель"
+
+msgid "Lead type seller"
+msgstr "Продавец"
+
+msgid "Lead type tenant"
+msgstr "Арендатор"
+
+msgid "Lead type landlord"
+msgstr "Арендодатель"
+
+msgid "Lead type investor"
+msgstr "Инвестор"
+
+msgid "Lead type unknown"
+msgstr "Не определен"
+
+msgid "Lead source telegram"
+msgstr "Telegram"
+
+msgid "Lead source referral"
+msgstr "Рекомендация"
+
+msgid "Lead source ads"
+msgstr "Реклама"
+
+msgid "Lead source website"
+msgstr "Сайт"
+
+msgid "Lead source repeat"
+msgstr "Повторный клиент"
+
+msgid "Lead source other"
+msgstr "Другое"
+
+msgid "Lead status new"
+msgstr "Новый"
+
+msgid "Lead status contacted"
+msgstr "Связались"
+
+msgid "Lead status meeting"
+msgstr "Назначена встреча"
+
+msgid "Lead status negotiation"
+msgstr "Переговоры"
+
+msgid "Lead status won"
+msgstr "Успешно"
+
+msgid "Lead status lost"
+msgstr "Потерян"
+
+msgid "Lead status paused"
+msgstr "Пауза"
+
+msgid "Lead reminder in one hour"
+msgstr "Через 1 час"
+
+msgid "Lead reminder today evening"
+msgstr "Сегодня в 18:00"
+
+msgid "Lead reminder tomorrow morning"
+msgstr "Завтра в 10:00"
+
+msgid "Lead reminder in three days"
+msgstr "Через 3 дня"
+
+msgid "Lead reminder next week"
+msgstr "На следующей неделе"
+
+msgid "Lead reminder none"
+msgstr "Без напоминания"

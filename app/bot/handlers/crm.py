@@ -7,7 +7,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup
 
 from app.bot.keyboards import build_crm_menu_keyboard, build_main_keyboard
 from app.bot.keyboards.crm import (
@@ -82,7 +82,10 @@ async def _show_lead_card(message: Message, lead, _) -> None:
 
 async def _edit_or_answer(callback: CallbackQuery, text: str, reply_markup) -> None:
     if callback.message:
-        await callback.message.edit_text(text, reply_markup=reply_markup)
+        if isinstance(reply_markup, InlineKeyboardMarkup):
+            await callback.message.edit_text(text, reply_markup=reply_markup)
+        else:
+            await callback.message.answer(text, reply_markup=reply_markup)
     await callback.answer()
 
 
