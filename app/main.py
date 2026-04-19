@@ -77,7 +77,10 @@ async def lifespan(app_ctx):
     yield app_ctx
     
     if app_ctx.dp:
-        await app_ctx.dp.stop_polling()
+        try:
+            await app_ctx.dp.stop_polling()
+        except RuntimeError:
+            logger.info("Polling was already stopped before shutdown cleanup.")
     if app_ctx.bot:
         await app_ctx.bot.session.close()
     if app_ctx.engine:
