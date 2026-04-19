@@ -5,10 +5,9 @@ from datetime import datetime
 
 from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.dispatcher.event.bases import SkipHandler
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 
 from app.bot.keyboards import build_crm_menu_keyboard, build_main_keyboard
 from app.bot.keyboards.crm import (
@@ -69,6 +68,11 @@ def _is_crm_menu_text(text: str, _) -> bool:
     }
 
 
+def _is_crm_menu_message(message: Message) -> bool:
+    _ = get_translator()
+    return _is_crm_menu_text((message.text or "").strip(), _)
+
+
 def _format_lead_card(lead) -> str:
     return (
         f"{lead.name}\n"
@@ -108,13 +112,10 @@ async def crm_root(message: Message, state: FSMContext) -> None:
     await _show_crm_root(message, state, _)
 
 
-@router.message(F.text)
+@router.message(_is_crm_menu_message)
 async def crm_menu_buttons(message: Message, state: FSMContext, sessionmaker) -> None:
     _ = get_translator()
     text = (message.text or "").strip()
-
-    if not _is_crm_menu_text(text, _):
-        raise SkipHandler
 
     if text == _("CRM"):
         await _show_crm_root(message, state, _)
