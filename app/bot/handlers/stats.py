@@ -3,6 +3,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 
 from app.core.config import config
+from app.infrastructure.database.transaction import managed_session
 from app.services.stats import StatsService
 from app.i18n import get_translator
 
@@ -21,7 +22,7 @@ async def stats(message, sessionmaker):
         await message.answer(_("Access denied."))
         return
 
-    async with sessionmaker() as session:
+    async with managed_session(sessionmaker) as session:
         stats_data = await StatsService().get_stats(session)
 
     text = (

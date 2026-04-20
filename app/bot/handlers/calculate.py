@@ -18,6 +18,7 @@ from app.bot.keyboards import (
     build_result_keyboard,
     build_user_stats_keyboard,
 )
+from app.infrastructure.database.transaction import managed_session
 
 
 router = Router()
@@ -81,7 +82,7 @@ async def _send_stats_message(message, sessionmaker, _):
 
 async def _build_user_stats_response(sessionmaker, _, period, page):
     stats_service = StatsService()
-    async with sessionmaker() as session:
+    async with managed_session(sessionmaker) as session:
         summary = await stats_service.get_stats(session)
         page_data = await stats_service.get_users_page(
             session,
@@ -255,8 +256,11 @@ async def calculation_actions(callback):
     payload = callback.data.split(":", maxsplit=2)
 
     if len(payload) == 2 and payload[1] == "new":
+        if not callback.message:
+            await callback.answer()
+            return
         is_admin = _is_admin(
-            chat_id=callback.message.chat.id if callback.message and callback.message.chat else None,
+            chat_id=callback.message.chat.id if callback.message.chat else None,
             user_id=callback.from_user.id if callback.from_user else None,
         )
         await callback.message.answer(
@@ -280,7 +284,8 @@ async def calculation_actions(callback):
         return
 
     if action == "compare":
-        await _send_comparison_message(callback.message, amount, _)
+        if callback.message:
+            await _send_comparison_message(callback.message, amount, _)
         await callback.answer()
         return
 
@@ -299,6 +304,9 @@ async def calculation_actions(callback):
         await callback.answer()
         return
 
+    if not callback.message:
+        await callback.answer()
+        return
     await callback.message.edit_text(
         text,
         reply_markup=build_result_keyboard(_, amount_token, active_view=active_view),
@@ -349,6 +357,9 @@ async def user_stats_actions(callback, sessionmaker):
             page=target_page,
         )
     except ValueError:
+        await callback.answer()
+        return
+    if not callback.message:
         await callback.answer()
         return
     await callback.message.edit_text(text, reply_markup=keyboard)

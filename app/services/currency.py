@@ -2,6 +2,7 @@ import httpx
 import redis.asyncio as redis
 
 from app.core.config import config
+from app.infrastructure.redis_values import redis_float
 
 
 class CurrencyService:
@@ -17,7 +18,7 @@ class CurrencyService:
         try:
             value = await client.get("currency:usd")
             if value is not None:
-                return float(value)
+                return redis_float(value)
         finally:
             await client.aclose()
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
-import exceptions
+from models import exceptions
 from models.lead import Lead, normalize_text
 from models.reminder import Reminder
 from repositories.lead_repository import LeadRepository

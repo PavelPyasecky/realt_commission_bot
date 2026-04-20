@@ -1,6 +1,7 @@
 import redis.asyncio as redis
 
 from app.core.config import config
+from app.infrastructure.redis_values import redis_float
 
 
 class UserPreferencesService:
@@ -23,7 +24,7 @@ class UserPreferencesService:
             value = await client.get(self._last_key(user_id))
             if value is None:
                 return None
-            return float(value)
+            return redis_float(value)
         finally:
             await client.aclose()
 
@@ -38,7 +39,7 @@ class UserPreferencesService:
         client = redis.from_url(str(config.REDIS_URL))
         try:
             values = await client.smembers(self._favorites_key(user_id))
-            parsed = [float(value) for value in values]
+            parsed = [redis_float(value) for value in values]
             return sorted(parsed)
         finally:
             await client.aclose()
