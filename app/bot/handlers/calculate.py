@@ -18,6 +18,7 @@ from app.bot.keyboards import (
     build_result_keyboard,
     build_user_stats_keyboard,
 )
+from app.infrastructure.database.transaction import managed_session
 
 
 router = Router()
@@ -81,7 +82,7 @@ async def _send_stats_message(message, sessionmaker, _):
 
 async def _build_user_stats_response(sessionmaker, _, period, page):
     stats_service = StatsService()
-    async with sessionmaker() as session:
+    async with managed_session(sessionmaker) as session:
         summary = await stats_service.get_stats(session)
         page_data = await stats_service.get_users_page(
             session,

@@ -3,11 +3,6 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from telegram import InlineKeyboardMarkup
-from telegram.ext import Application, CallbackContext
-
-from keyboards.crm import reminder_notification_keyboard
-from models.crm_options import REMINDER_PRESETS
 from models.lead import Lead
 from models.reminder import Reminder
 from services.lead_service import LeadService
@@ -78,7 +73,11 @@ class ReminderService:
         for job in application.job_queue.get_jobs_by_name(self._job_name(lead_id)):
             job.schedule_removal()
 
-    async def send_reminder(self, context: CallbackContext) -> None:
+    async def send_reminder(self, context) -> None:
+        from telegram import InlineKeyboardMarkup
+
+        from keyboards.crm import reminder_notification_keyboard
+
         job_data = context.job.data
         lead = self.lead_service.get_lead_by_id(job_data["lead_id"])
         reminder = self.lead_service.get_active_reminder(job_data["lead_id"])
