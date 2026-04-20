@@ -100,11 +100,15 @@ def compile_translations():
 
 
 def get_translator():
-    locale = os.environ.get("APP_LOCALE", "ru")
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     locale_dir = os.path.join(base_dir, "locales")
     compile_translations()
-    translation = gettext.translation("messages", localedir=locale_dir, languages=[locale], fallback=True)
+    translation = gettext.translation(
+        "messages",
+        localedir=locale_dir,
+        languages=["ru"],
+        fallback=False,
+    )
     return translation.gettext
 
 

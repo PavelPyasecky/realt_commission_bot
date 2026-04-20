@@ -96,10 +96,10 @@ async def _build_user_stats_response(sessionmaker, _, period, page):
     lines = [
         f"<b>{_('Statistics')}</b>",
         "",
-        f"DAU — {_('Active in last 24 hours')}: {summary['dau']}",
-        f"WAU — {_('Active in last 7 days')}: {summary['wau']}",
-        f"MAU — {_('Active in last 30 days')}: {summary['mau']}",
-        f"{_('All unique')}: {summary['total']}",
+        _("Stats summary line dau").format(count=summary["dau"]),
+        _("Stats summary line wau").format(count=summary["wau"]),
+        _("Stats summary line mau").format(count=summary["mau"]),
+        _("Stats summary line total").format(count=summary["total"]),
         "",
         f"<b>{_('Users section title')}</b>: {period_label}",
         f"{_('Users in period')}: {page_data['total']}",
@@ -134,7 +134,7 @@ def _format_user_line(_, idx, user):
     created_at = _format_dt(user.created_at)
     last_seen = _format_dt(user.last_seen)
     return (
-        f"{idx}. {profile_link} | ID: <code>{user.tg_id}</code>\n"
+        f"{idx}. {profile_link} | {_('User id label')}: <code>{user.tg_id}</code>\n"
         f"   {_('Username field')}: {username_display} | "
         f"{_('First name field')}: {first_name}\n"
         f"   {_('Created field')}: {created_at} | {_('Last seen field')}: {last_seen}"

@@ -210,7 +210,7 @@ async def forwarded_to_lead(message: Message, state: FSMContext, sessionmaker) -
         return
 
     origin = message.forward_origin
-    fallback_name = f"Telegram Lead {int(datetime.utcnow().timestamp())}"
+    fallback_name = _("Forwarded lead default name").format(ts=int(datetime.utcnow().timestamp()))
 
     if hasattr(origin, "sender_user") and origin.sender_user:
         user = origin.sender_user

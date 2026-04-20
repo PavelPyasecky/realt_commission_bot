@@ -27,9 +27,9 @@ async def stats(message, sessionmaker):
 
     text = (
         f"{_('Statistics')}\n\n"
-        f"DAU — {_('Active in last 24 hours')}: {stats_data['dau']}\n"
-        f"WAU — {_('Active in last 7 days')}: {stats_data['wau']}\n"
-        f"MAU — {_('Active in last 30 days')}: {stats_data['mau']}\n"
-        f"{_('All unique')}: {stats_data['total']}\n"
+        f"{_('Stats summary line dau').format(count=stats_data['dau'])}\n"
+        f"{_('Stats summary line wau').format(count=stats_data['wau'])}\n"
+        f"{_('Stats summary line mau').format(count=stats_data['mau'])}\n"
+        f"{_('Stats summary line total').format(count=stats_data['total'])}\n"
     )
     await message.answer(text)

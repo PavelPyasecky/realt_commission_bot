@@ -106,7 +106,7 @@ msgid "Profile link"
 msgstr "Профиль"
 
 msgid "Username field"
-msgstr "Username"
+msgstr "Логин"
 
 msgid "First name field"
 msgstr "Имя"
@@ -325,7 +325,7 @@ msgid "Lead type unknown"
 msgstr "Не определен"
 
 msgid "Lead source telegram"
-msgstr "Telegram"
+msgstr "Телеграм"
 
 msgid "Lead source referral"
 msgstr "Рекомендация"
@@ -404,3 +404,24 @@ msgstr "Назад в CRM"
 
 msgid "Lead reminder title"
 msgstr "Напоминание о звонке"
+
+msgid "Stats page counter"
+msgstr "{page} из {total}"
+
+msgid "Stats summary line dau"
+msgstr "За 24 часа: {count}"
+
+msgid "Stats summary line wau"
+msgstr "За 7 дней: {count}"
+
+msgid "Stats summary line mau"
+msgstr "За 30 дней: {count}"
+
+msgid "Stats summary line total"
+msgstr "Всего уникальных: {count}"
+
+msgid "User id label"
+msgstr "ID"
+
+msgid "Forwarded lead default name"
+msgstr "Лид из Telegram {ts}"
