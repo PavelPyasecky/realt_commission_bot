@@ -15,10 +15,9 @@ from zoneinfo import ZoneInfo
 from app.bot.keyboards.broadcast import (
     build_broadcast_detail_keyboard,
     build_broadcast_list_inline,
-    build_broadcast_reply_keyboard,
+    build_broadcast_submenu_keyboard,
 )
-from app.bot.keyboards.calculate import build_main_keyboard
-from app.bot.reply_menu_labels import main_and_crm_menu_texts
+from app.bot.reply_menu_labels import pass_through_from_broadcast_fsm
 from app.core.config import config
 from app.infrastructure.database.transaction import managed_session
 from app.infrastructure.repositories.announcement_repository import AnnouncementRepository
@@ -70,13 +69,9 @@ def _row_title(row) -> str:
     return f"#{row.id}"
 
 
-def _broadcast_reply_markup(message: Message):
+def _broadcast_submenu_markup():
     _ = get_translator()
-    is_admin = _is_admin(
-        message.from_user.id if message.from_user else None,
-        message.chat.id if message.chat else None,
-    )
-    return build_broadcast_reply_keyboard(_, build_main_keyboard(_, is_admin=is_admin))
+    return build_broadcast_submenu_keyboard(_)
 
 
 async def _send_list_message(message: Message, sessionmaker, state: str, page: int = 0) -> None:
@@ -96,7 +91,7 @@ async def _send_list_message(message: Message, sessionmaker, state: str, page: i
         "sent": _("Broadcast list sent"),
     }
     header = f"<b>{titles[state]}</b> ({total})\n\n{_('Broadcast list hint')}"
-    await message.answer(header, reply_markup=_broadcast_reply_markup(message), parse_mode="HTML")
+    await message.answer(header, reply_markup=_broadcast_submenu_markup(), parse_mode="HTML")
     if list_rows:
         await message.answer(
             "\u2060",
@@ -109,7 +104,7 @@ async def _send_detail_message(message: Message, sessionmaker, aid: int) -> None
     async with managed_session(sessionmaker) as session:
         row = await _repo.get_by_id(session, aid)
     if row is None:
-        await message.answer(_("Broadcast not found"), reply_markup=_broadcast_reply_markup(message))
+        await message.answer(_("Broadcast not found"), reply_markup=_broadcast_submenu_markup())
         return
     when = row.scheduled_at.strftime("%Y-%m-%d %H:%M %Z")
     sent = row.sent_at.strftime("%Y-%m-%d %H:%M %Z") if row.sent_at else "—"
@@ -123,7 +118,7 @@ async def _send_detail_message(message: Message, sessionmaker, aid: int) -> None
         f"{_('Broadcast field error')}: {html.escape(err)}\n\n"
         f"<b>{_('Broadcast field preview')}</b>\n{preview}"
     )
-    await message.answer(text, reply_markup=_broadcast_reply_markup(message), parse_mode="HTML")
+    await message.answer(text, reply_markup=_broadcast_submenu_markup(), parse_mode="HTML")
     detail_kb = build_broadcast_detail_keyboard(_, row.id, row.state)
     if detail_kb.inline_keyboard:
         await message.answer("\u2060", reply_markup=detail_kb)
@@ -133,7 +128,7 @@ async def open_broadcast_menu(message: Message, state: FSMContext | None = None)
     _ = get_translator()
     if state is not None:
         await state.clear()
-    await message.answer(_("Broadcast menu title"), reply_markup=_broadcast_reply_markup(message), parse_mode="HTML")
+    await message.answer(_("Broadcast menu title"), reply_markup=_broadcast_submenu_markup(), parse_mode="HTML")
 
 
 async def start_new_broadcast(message: Message, state: FSMContext) -> None:
@@ -144,7 +139,7 @@ async def start_new_broadcast(message: Message, state: FSMContext) -> None:
     await state.set_state(BroadcastFlow.schedule)
     await message.answer(
         _("Announce schedule prompt").format(tz=config.ANNOUNCEMENT_TIMEZONE),
-        reply_markup=_broadcast_reply_markup(message),
+        reply_markup=_broadcast_submenu_markup(),
     )
 
 
@@ -233,7 +228,7 @@ async def _bc_list_callback(callback: CallbackQuery, sessionmaker, state: str, k
     }
     header = f"<b>{titles[state]}</b> ({total})\n\n{_('Broadcast list hint')}"
     if callback.message:
-        await callback.message.answer(header, reply_markup=_broadcast_reply_markup(callback.message), parse_mode="HTML")
+        await callback.message.answer(header, reply_markup=_broadcast_submenu_markup(), parse_mode="HTML")
         if list_rows:
             await callback.message.answer(
                 "\u2060",
@@ -309,7 +304,7 @@ async def bc_edit_schedule_start(callback: CallbackQuery, state: FSMContext) -> 
     if callback.message:
         await callback.message.answer(
             _("Broadcast edit schedule prompt").format(tz=config.ANNOUNCEMENT_TIMEZONE),
-            reply_markup=_broadcast_reply_markup(callback.message),
+            reply_markup=_broadcast_submenu_markup(),
         )
     await callback.answer()
 
@@ -324,7 +319,7 @@ async def bc_edit_body_start(callback: CallbackQuery, state: FSMContext) -> None
     await state.set_state(BroadcastFlow.edit_body)
     await state.update_data(edit_announcement_id=aid)
     if callback.message:
-        await callback.message.answer(_("Announce body prompt"), reply_markup=_broadcast_reply_markup(callback.message))
+        await callback.message.answer(_("Announce body prompt"), reply_markup=_broadcast_submenu_markup())
     await callback.answer()
 
 
@@ -345,7 +340,7 @@ async def on_schedule(message: Message, state: FSMContext) -> None:
         await message.answer(_("Access denied."))
         return
     text = (message.text or "").strip()
-    if text in main_and_crm_menu_texts(_):
+    if text in pass_through_from_broadcast_fsm(_):
         raise SkipHandler()
     try:
         when = _parse_schedule((message.text or "").strip())
@@ -354,7 +349,7 @@ async def on_schedule(message: Message, state: FSMContext) -> None:
         return
     await state.update_data(scheduled_at_iso=when.isoformat())
     await state.set_state(BroadcastFlow.body)
-    await message.answer(_("Announce body prompt"), reply_markup=_broadcast_reply_markup(message))
+    await message.answer(_("Announce body prompt"), reply_markup=_broadcast_submenu_markup())
 
 
 @router.message(BroadcastFlow.body, F.text)
@@ -365,7 +360,7 @@ async def on_body(message: Message, state: FSMContext, sessionmaker) -> None:
         await message.answer(_("Access denied."))
         return
     raw = (message.text or "").strip()
-    if raw in main_and_crm_menu_texts(_):
+    if raw in pass_through_from_broadcast_fsm(_):
         raise SkipHandler()
     if not raw:
         await message.answer(_("Announce body empty"))
@@ -392,7 +387,7 @@ async def on_body(message: Message, state: FSMContext, sessionmaker) -> None:
             id=row.id,
             when=when.strftime("%Y-%m-%d %H:%M %Z"),
         ),
-        reply_markup=_broadcast_reply_markup(message),
+        reply_markup=_broadcast_submenu_markup(),
     )
 
 
@@ -403,7 +398,7 @@ async def on_edit_schedule(message: Message, state: FSMContext, sessionmaker) ->
         await state.clear()
         await message.answer(_("Access denied."))
         return
-    if (message.text or "").strip() in main_and_crm_menu_texts(_):
+    if (message.text or "").strip() in pass_through_from_broadcast_fsm(_):
         raise SkipHandler()
     aid = (await state.get_data()).get("edit_announcement_id")
     if not aid:
@@ -420,7 +415,7 @@ async def on_edit_schedule(message: Message, state: FSMContext, sessionmaker) ->
     await state.clear()
     await message.answer(
         _("Broadcast schedule updated") if ok else _("Broadcast update failed"),
-        reply_markup=_broadcast_reply_markup(message),
+        reply_markup=_broadcast_submenu_markup(),
     )
 
 
@@ -433,7 +428,7 @@ async def on_edit_body(message: Message, state: FSMContext, sessionmaker) -> Non
         return
     aid = (await state.get_data()).get("edit_announcement_id")
     raw = (message.text or "").strip()
-    if raw in main_and_crm_menu_texts(_):
+    if raw in pass_through_from_broadcast_fsm(_):
         raise SkipHandler()
     if not aid or not raw:
         await message.answer(_("Announce body empty"))
@@ -444,5 +439,5 @@ async def on_edit_body(message: Message, state: FSMContext, sessionmaker) -> Non
     await state.clear()
     await message.answer(
         _("Broadcast body updated") if ok else _("Broadcast update failed"),
-        reply_markup=_broadcast_reply_markup(message),
+        reply_markup=_broadcast_submenu_markup(),
     )

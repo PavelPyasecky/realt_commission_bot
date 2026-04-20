@@ -1,4 +1,4 @@
-"""Reply keyboard labels that must pass through to calculator/CRM handlers."""
+"""Reply keyboard labels that must pass through broadcast FSM to other handlers."""
 
 
 def main_and_crm_menu_texts(_) -> frozenset[str]:
@@ -19,3 +19,18 @@ def main_and_crm_menu_texts(_) -> frozenset[str]:
             _("Back to main menu"),
         }
     )
+
+
+def broadcast_submenu_texts(_) -> frozenset[str]:
+    return frozenset(
+        {
+            _("Broadcast list pending"),
+            _("Broadcast list failed"),
+            _("Broadcast list sent"),
+            _("Broadcast new"),
+        }
+    )
+
+
+def pass_through_from_broadcast_fsm(_) -> frozenset[str]:
+    return main_and_crm_menu_texts(_) | broadcast_submenu_texts(_)

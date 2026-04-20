@@ -1,20 +1,20 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 
 
-def build_broadcast_reply_keyboard(_, main_keyboard: ReplyKeyboardMarkup) -> ReplyKeyboardMarkup:
-    broadcast_rows = [
-        [
-            KeyboardButton(text=_("Broadcast list pending")),
-            KeyboardButton(text=_("Broadcast list failed")),
-        ],
-        [
-            KeyboardButton(text=_("Broadcast list sent")),
-            KeyboardButton(text=_("Broadcast new")),
-        ],
-        [KeyboardButton(text=_("Broadcast home"))],
-    ]
+def build_broadcast_submenu_keyboard(_) -> ReplyKeyboardMarkup:
+    """Reply keyboard while in broadcast section (same pattern as CRM submenu)."""
     return ReplyKeyboardMarkup(
-        keyboard=broadcast_rows + main_keyboard.keyboard,
+        keyboard=[
+            [
+                KeyboardButton(text=_("Broadcast list pending")),
+                KeyboardButton(text=_("Broadcast list failed")),
+            ],
+            [
+                KeyboardButton(text=_("Broadcast list sent")),
+                KeyboardButton(text=_("Broadcast new")),
+            ],
+            [KeyboardButton(text=_("Back to main menu"))],
+        ],
         resize_keyboard=True,
     )
 
