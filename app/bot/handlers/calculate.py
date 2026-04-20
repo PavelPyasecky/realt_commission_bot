@@ -5,7 +5,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from app.bot.handlers.announcements import AnnounceFlow, start_announce_flow
+from app.bot.handlers.announcements import BroadcastFlow, open_broadcast_menu
 
 from app.core.config import config
 from app.services import exceptions
@@ -194,7 +194,12 @@ async def compare_command(message):
 @router.message(F.text)
 async def calculate(message, sessionmaker, state: FSMContext):
     st = await state.get_state()
-    if st in (AnnounceFlow.schedule.state, AnnounceFlow.body.state):
+    if st in (
+        BroadcastFlow.schedule.state,
+        BroadcastFlow.body.state,
+        BroadcastFlow.edit_schedule.state,
+        BroadcastFlow.edit_body.state,
+    ):
         return
     _ = get_translator()
     text = (message.text or "").strip()
@@ -229,7 +234,7 @@ async def calculate(message, sessionmaker, state: FSMContext):
         await _send_stats_message(message, sessionmaker, _)
         return
     if is_admin and text == _("Admin broadcast"):
-        await start_announce_flow(message, state)
+        await open_broadcast_menu(message, state)
         return
 
     if text in _action_texts(_):

@@ -446,3 +446,90 @@ msgstr "ID"
 
 msgid "Forwarded lead default name"
 msgstr "Лид из Telegram {ts}"
+
+msgid "Could not update message"
+msgstr "Не удалось обновить сообщение."
+
+msgid "Invalid action"
+msgstr "Действие недоступно."
+
+msgid "Broadcast menu title"
+msgstr "<b>Рассылки</b>\n\nВыберите раздел или создайте новую рассылку."
+
+msgid "Broadcast list pending"
+msgstr "Запланированные"
+
+msgid "Broadcast list failed"
+msgstr "С ошибкой"
+
+msgid "Broadcast list sent"
+msgstr "Отправленные"
+
+msgid "Broadcast new"
+msgstr "➕ Новая рассылка"
+
+msgid "Broadcast close menu"
+msgstr "✖ Закрыть"
+
+msgid "Broadcast back home"
+msgstr "⬅ В меню"
+
+msgid "Broadcast list hint"
+msgstr "Нажмите на строку, чтобы открыть карточку."
+
+msgid "Broadcast detail title"
+msgstr "Рассылка"
+
+msgid "Broadcast field state"
+msgstr "Статус"
+
+msgid "Broadcast field schedule"
+msgstr "Запланировано"
+
+msgid "Broadcast field sent"
+msgstr "Отправлено"
+
+msgid "Broadcast field error"
+msgstr "Ошибка"
+
+msgid "Broadcast field preview"
+msgstr "Текст"
+
+msgid "Broadcast not found"
+msgstr "Рассылка не найдена."
+
+msgid "Broadcast cancelled ok"
+msgstr "Рассылка отменена."
+
+msgid "Broadcast cancel failed"
+msgstr "Не удалось отменить (возможно, уже отправлена)."
+
+msgid "Broadcast deleted ok"
+msgstr "Рассылка удалена."
+
+msgid "Broadcast delete failed"
+msgstr "Не удалось удалить."
+
+msgid "Broadcast edit schedule prompt"
+msgstr "Новая дата и время в зоне {tz} (ГГГГ-ММ-ДД ЧЧ:ММ):"
+
+msgid "Broadcast schedule updated"
+msgstr "Время рассылки обновлено."
+
+msgid "Broadcast body updated"
+msgstr "Текст рассылки обновлён."
+
+msgid "Broadcast update failed"
+msgstr "Не удалось обновить (проверьте статус рассылки)."
+
+msgid "Broadcast edit time"
+msgstr "Изменить время"
+
+msgid "Broadcast edit text"
+msgstr "Изменить текст"
+
+msgid "Broadcast cancel"
+msgstr "Отменить"
+
+msgid "Broadcast delete"
+msgstr "Удалить"

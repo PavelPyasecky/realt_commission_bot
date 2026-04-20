@@ -8,8 +8,10 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
+from aiogram.exceptions import TelegramBadRequest
 
-from app.bot.handlers.announcements import AnnounceFlow
+from app.bot.callback_short import b36_to_lead_id, parse_lead_open_callback, parse_status_callback
+from app.bot.handlers.announcements import BroadcastFlow
 from app.bot.keyboards import build_crm_menu_keyboard, build_main_keyboard
 from app.bot.keyboards.crm import (
     build_duplicate_keyboard,
@@ -115,11 +117,24 @@ async def _show_lead_card(message: Message, lead, _) -> None:
 
 
 async def _edit_or_answer(callback: CallbackQuery, text: str, reply_markup) -> None:
-    if callback.message:
-        if isinstance(reply_markup, InlineKeyboardMarkup):
+    _ = get_translator()
+    if not callback.message:
+        await callback.answer()
+        return
+    if isinstance(reply_markup, InlineKeyboardMarkup):
+        try:
             await callback.message.edit_text(text, reply_markup=reply_markup)
-        else:
-            await callback.message.answer(text, reply_markup=reply_markup)
+        except TelegramBadRequest as exc:
+            if "message is not modified" in str(exc).lower():
+                await callback.answer()
+                return
+            try:
+                await callback.message.answer(text, reply_markup=reply_markup)
+            except TelegramBadRequest:
+                await callback.answer(_("Could not update message"), show_alert=True)
+                return
+    else:
+        await callback.message.answer(text, reply_markup=reply_markup)
     await callback.answer()
 
 
@@ -132,7 +147,12 @@ async def crm_root(message: Message, state: FSMContext) -> None:
 @router.message(_is_crm_menu_message)
 async def crm_menu_buttons(message: Message, state: FSMContext, sessionmaker) -> None:
     st = await state.get_state()
-    if st in (AnnounceFlow.schedule.state, AnnounceFlow.body.state):
+    if st in (
+        BroadcastFlow.schedule.state,
+        BroadcastFlow.body.state,
+        BroadcastFlow.edit_schedule.state,
+        BroadcastFlow.edit_body.state,
+    ):
         return
     _ = get_translator()
     text = (message.text or "").strip()
@@ -273,10 +293,10 @@ async def crm_menu(callback: CallbackQuery, state: FSMContext) -> None:
     await _edit_or_answer(callback, _("CRM"), build_crm_menu_keyboard(_))
 
 
-@router.callback_query(F.data.startswith("create:type:"))
+@router.callback_query(F.data.startswith("ct:"))
 async def crm_add_type(callback: CallbackQuery, state: FSMContext) -> None:
     _ = get_translator()
-    value = callback.data.split(":")[2]
+    value = callback.data.split(":")[1]
     data = await state.get_data()
     draft = dict(data.get(CREATE_DRAFT_KEY, {}))
     draft["lead_type"] = value
@@ -285,10 +305,10 @@ async def crm_add_type(callback: CallbackQuery, state: FSMContext) -> None:
     await _edit_or_answer(callback, _("Choose lead source."), build_source_keyboard("create:source", _=_))
 
 
-@router.callback_query(F.data.startswith("create:source:"))
+@router.callback_query(F.data.startswith("cf:"))
 async def crm_add_source(callback: CallbackQuery, state: FSMContext) -> None:
     _ = get_translator()
-    value = callback.data.split(":")[2]
+    value = callback.data.split(":")[1]
     data = await state.get_data()
     draft = dict(data.get(CREATE_DRAFT_KEY, {}))
     draft["source"] = value
@@ -297,7 +317,7 @@ async def crm_add_source(callback: CallbackQuery, state: FSMContext) -> None:
     await _edit_or_answer(callback, _("Send the lead name."), build_crm_menu_keyboard(_))
 
 
-@router.callback_query(F.data == "create:phone:skip")
+@router.callback_query(F.data == "ps")
 async def crm_skip_phone(callback: CallbackQuery, state: FSMContext) -> None:
     _ = get_translator()
     data = await state.get_data()
@@ -307,10 +327,10 @@ async def crm_skip_phone(callback: CallbackQuery, state: FSMContext) -> None:
     await _edit_or_answer(callback, _("Choose the first reminder."), build_reminder_keyboard("create:rem", _=_))
 
 
-@router.callback_query(F.data.startswith("create:rem:"))
+@router.callback_query(F.data.startswith("cq:"))
 async def crm_create_lead(callback: CallbackQuery, state: FSMContext, sessionmaker) -> None:
     _ = get_translator()
-    preset = callback.data.split(":")[2]
+    preset = callback.data.split(":")[1]
     draft = (await state.get_data()).get(CREATE_DRAFT_KEY, {})
     if not draft.get("name") or not draft.get("lead_type") or not draft.get("source"):
         await state.clear()
@@ -395,17 +415,17 @@ async def crm_today(callback: CallbackQuery, sessionmaker) -> None:
     await _edit_or_answer(callback, "\n".join(sections), build_lead_list_keyboard(overdue + today, _=_))
 
 
-@router.callback_query(F.data.startswith("dup:open:"))
+@router.callback_query(F.data.startswith("do:"))
 async def crm_dup_open(callback: CallbackQuery, state: FSMContext, sessionmaker) -> None:
     _ = get_translator()
-    lead_id = int(callback.data.split(":")[2])
+    lead_id = b36_to_lead_id(callback.data.split(":")[1])
     async with managed_session(sessionmaker) as session:
         lead = await lead_service.get_lead(session, callback.from_user.id, lead_id)
     await state.clear()
     await _edit_or_answer(callback, _format_lead_card(lead, _), build_lead_card_keyboard(lead.id, archived=lead.is_archived, include_add_phone=lead.phone is None, _=_))
 
 
-@router.callback_query(F.data == "dup:create")
+@router.callback_query(F.data == "dx")
 async def crm_dup_create(callback: CallbackQuery, state: FSMContext, sessionmaker) -> None:
     _ = get_translator()
     draft = (await state.get_data()).get(FORWARDED_DRAFT_KEY)
@@ -423,164 +443,173 @@ async def crm_dup_create(callback: CallbackQuery, state: FSMContext, sessionmake
     await _edit_or_answer(callback, _format_lead_card(lead, _), build_lead_card_keyboard(lead.id, include_add_phone=lead.phone is None, _=_))
 
 
-@router.callback_query(F.data.startswith("lead:open:"))
+@router.callback_query(F.data.startswith("o:"))
 async def crm_open_lead(callback: CallbackQuery, sessionmaker) -> None:
     _ = get_translator()
-    lead_id = int(callback.data.split(":")[2])
+    lead_id = parse_lead_open_callback(callback.data)
     async with managed_session(sessionmaker) as session:
         lead = await lead_service.get_lead(session, callback.from_user.id, lead_id)
     await _edit_or_answer(callback, _format_lead_card(lead, _), build_lead_card_keyboard(lead.id, archived=lead.is_archived, include_add_phone=lead.phone is None, _=_))
 
 
-@router.callback_query(F.data.startswith("lead:archive:"))
+@router.callback_query(F.data.startswith("a:"))
 async def crm_archive(callback: CallbackQuery, sessionmaker) -> None:
     _ = get_translator()
-    lead_id = int(callback.data.split(":")[2])
+    lead_id = b36_to_lead_id(callback.data.split(":")[1])
     async with managed_session(sessionmaker) as session:
         lead = await lead_service.archive(session, callback.from_user.id, lead_id)
     await _edit_or_answer(callback, _format_lead_card(lead, _), build_lead_card_keyboard(lead.id, archived=True, include_add_phone=lead.phone is None, _=_))
 
 
-@router.callback_query(F.data.startswith("lead:restore:"))
+@router.callback_query(F.data.startswith("v:"))
 async def crm_restore(callback: CallbackQuery, sessionmaker) -> None:
     _ = get_translator()
-    lead_id = int(callback.data.split(":")[2])
+    lead_id = b36_to_lead_id(callback.data.split(":")[1])
     async with managed_session(sessionmaker) as session:
         lead = await lead_service.restore(session, callback.from_user.id, lead_id)
     await _edit_or_answer(callback, _format_lead_card(lead, _), build_lead_card_keyboard(lead.id, archived=False, include_add_phone=lead.phone is None, _=_))
 
 
-@router.callback_query(F.data.startswith("lead:call:"))
+@router.callback_query(F.data.startswith("k:"))
 async def crm_mark_called(callback: CallbackQuery, sessionmaker) -> None:
     _ = get_translator()
-    lead_id = int(callback.data.split(":")[2])
+    lead_id = b36_to_lead_id(callback.data.split(":")[1])
     async with managed_session(sessionmaker) as session:
         lead = await lead_service.mark_called(session, callback.from_user.id, lead_id)
     await _edit_or_answer(callback, _format_lead_card(lead, _), build_lead_card_keyboard(lead.id, archived=lead.is_archived, include_add_phone=lead.phone is None, _=_))
 
 
-@router.callback_query(F.data.startswith("lead:edit:"))
+@router.callback_query(F.data.startswith("e:"))
 async def crm_edit_menu(callback: CallbackQuery, sessionmaker) -> None:
     _ = get_translator()
-    lead_id = int(callback.data.split(":")[2])
+    lead_id = b36_to_lead_id(callback.data.split(":")[1])
     async with managed_session(sessionmaker) as session:
         lead = await lead_service.get_lead(session, callback.from_user.id, lead_id)
     await _edit_or_answer(callback, _("Edit {name}").format(name=lead.name), build_edit_menu_keyboard(lead.id, _=_))
 
 
-@router.callback_query(F.data.startswith("lead:status:"))
+@router.callback_query(F.data.startswith("z:"))
 async def crm_status_menu(callback: CallbackQuery, sessionmaker) -> None:
     _ = get_translator()
-    lead_id = int(callback.data.split(":")[2])
+    lead_id = b36_to_lead_id(callback.data.split(":")[1])
     async with managed_session(sessionmaker) as session:
         await lead_service.get_lead(session, callback.from_user.id, lead_id)
     await _edit_or_answer(callback, _("Choose the new status."), build_status_keyboard(lead_id, _=_))
 
 
-@router.callback_query(F.data.startswith("st:"))
+@router.callback_query(F.data.startswith("s:"))
 async def crm_set_status(callback: CallbackQuery, sessionmaker) -> None:
     _ = get_translator()
-    _, lead_id, status = callback.data.split(":", 2)
+    try:
+        lead_id, status = parse_status_callback(callback.data)
+    except ValueError:
+        await callback.answer(_("Invalid action"), show_alert=True)
+        return
     async with managed_session(sessionmaker) as session:
-        lead = await lead_service.update_status(session, callback.from_user.id, int(lead_id), status)
+        lead = await lead_service.update_status(session, callback.from_user.id, lead_id, status)
     await _edit_or_answer(callback, _format_lead_card(lead, _), build_lead_card_keyboard(lead.id, archived=lead.is_archived, include_add_phone=lead.phone is None, _=_))
 
 
-@router.callback_query(F.data.startswith("lead:rem:"))
+@router.callback_query(F.data.startswith("r:"))
 async def crm_reminder_menu(callback: CallbackQuery, sessionmaker) -> None:
     _ = get_translator()
-    lead_id = int(callback.data.split(":")[2])
+    lead_id = b36_to_lead_id(callback.data.split(":")[1])
     async with managed_session(sessionmaker) as session:
         await lead_service.get_lead(session, callback.from_user.id, lead_id)
     await _edit_or_answer(callback, _("Choose the reminder time."), build_reminder_keyboard("lead:remset", lead_id, _=_))
 
 
-@router.callback_query(F.data.startswith("lead:remset:"))
+@router.callback_query(F.data.startswith("mq:"))
 async def crm_set_reminder(callback: CallbackQuery, sessionmaker) -> None:
     _ = get_translator()
-    _, _, lead_id, preset = callback.data.split(":")
+    _, b36, preset = callback.data.split(":", 2)
+    lead_id = b36_to_lead_id(b36)
     async with managed_session(sessionmaker) as session:
         if preset == "none":
-            lead = await lead_service.clear_reminder(session, callback.from_user.id, int(lead_id))
+            lead = await lead_service.clear_reminder(session, callback.from_user.id, lead_id)
         else:
             lead = await lead_service.set_reminder(
                 session,
                 callback.from_user.id,
-                int(lead_id),
+                lead_id,
                 lead_service.schedule_from_preset(preset),
             )
     await _edit_or_answer(callback, _format_lead_card(lead, _), build_lead_card_keyboard(lead.id, archived=lead.is_archived, include_add_phone=lead.phone is None, _=_))
 
 
-@router.callback_query(F.data.startswith("edit:name:"))
+@router.callback_query(F.data.startswith("fn:"))
 async def crm_edit_name(callback: CallbackQuery, state: FSMContext) -> None:
     _ = get_translator()
-    lead_id = int(callback.data.split(":")[2])
+    lead_id = b36_to_lead_id(callback.data.split(":")[1])
     await state.update_data(edit_lead_id=lead_id)
     await state.set_state(CRMFlow.edit_name)
     await _edit_or_answer(callback, _("Send the new lead name."), build_crm_menu_keyboard(_))
 
 
-@router.callback_query(F.data.startswith("edit:phoneclear:"))
+@router.callback_query(F.data.startswith("pc:"))
 async def crm_clear_phone(callback: CallbackQuery, sessionmaker) -> None:
     _ = get_translator()
-    lead_id = int(callback.data.split(":")[2])
+    lead_id = b36_to_lead_id(callback.data.split(":")[1])
     async with managed_session(sessionmaker) as session:
         lead = await lead_service.update_phone(session, callback.from_user.id, lead_id, "")
     await _edit_or_answer(callback, _format_lead_card(lead, _), build_lead_card_keyboard(lead.id, archived=lead.is_archived, include_add_phone=lead.phone is None, _=_))
 
 
-@router.callback_query(F.data.startswith("edit:phone:"))
+@router.callback_query(F.data.startswith("p:"))
 async def crm_edit_phone(callback: CallbackQuery, state: FSMContext) -> None:
     _ = get_translator()
-    lead_id = int(callback.data.split(":")[2])
+    lead_id = b36_to_lead_id(callback.data.split(":")[1])
     await state.update_data(edit_lead_id=lead_id)
     await state.set_state(CRMFlow.edit_phone)
     await _edit_or_answer(callback, _("Send the new phone number."), build_skip_phone_keyboard(edit_mode=True, lead_id=lead_id, _=_))
 
 
-@router.callback_query(F.data.startswith("edit:type:"))
+@router.callback_query(F.data.startswith("yt:"))
 async def crm_edit_type(callback: CallbackQuery, sessionmaker) -> None:
     _ = get_translator()
-    parts = callback.data.split(":")
+    parts = callback.data.split(":", 2)
     if len(parts) == 3:
-        lead_id = int(parts[2])
+        _, b36, value = parts
+        lead_id = b36_to_lead_id(b36)
         async with managed_session(sessionmaker) as session:
-            await lead_service.get_lead(session, callback.from_user.id, lead_id)
-        await _edit_or_answer(callback, _("Choose the new lead type."), build_lead_type_keyboard("edit:type", lead_id, _=_))
+            lead = await lead_service.update_lead_type(session, callback.from_user.id, lead_id, value)
+        await _edit_or_answer(callback, _format_lead_card(lead, _), build_lead_card_keyboard(lead.id, archived=lead.is_archived, include_add_phone=lead.phone is None, _=_))
         return
-
-    lead_id = int(parts[2])
-    value = parts[3]
+    if len(parts) != 2:
+        await callback.answer()
+        return
+    lead_id = b36_to_lead_id(parts[1])
     async with managed_session(sessionmaker) as session:
-        lead = await lead_service.update_lead_type(session, callback.from_user.id, lead_id, value)
-    await _edit_or_answer(callback, _format_lead_card(lead, _), build_lead_card_keyboard(lead.id, archived=lead.is_archived, include_add_phone=lead.phone is None, _=_))
+        await lead_service.get_lead(session, callback.from_user.id, lead_id)
+    await _edit_or_answer(callback, _("Choose the new lead type."), build_lead_type_keyboard("edit:type", lead_id, _=_))
 
 
-@router.callback_query(F.data.startswith("edit:source:"))
+@router.callback_query(F.data.startswith("yf:"))
 async def crm_edit_source(callback: CallbackQuery, sessionmaker) -> None:
     _ = get_translator()
-    parts = callback.data.split(":")
+    parts = callback.data.split(":", 2)
     if len(parts) == 3:
-        lead_id = int(parts[2])
+        _, b36, value = parts
+        lead_id = b36_to_lead_id(b36)
         async with managed_session(sessionmaker) as session:
-            await lead_service.get_lead(session, callback.from_user.id, lead_id)
-        await _edit_or_answer(callback, _("Choose the new lead source."), build_source_keyboard("edit:source", lead_id, _=_))
+            lead = await lead_service.update_source(session, callback.from_user.id, lead_id, value)
+        await _edit_or_answer(callback, _format_lead_card(lead, _), build_lead_card_keyboard(lead.id, archived=lead.is_archived, include_add_phone=lead.phone is None, _=_))
         return
-
-    lead_id = int(parts[2])
-    value = parts[3]
+    if len(parts) != 2:
+        await callback.answer()
+        return
+    lead_id = b36_to_lead_id(parts[1])
     async with managed_session(sessionmaker) as session:
-        lead = await lead_service.update_source(session, callback.from_user.id, lead_id, value)
-    await _edit_or_answer(callback, _format_lead_card(lead, _), build_lead_card_keyboard(lead.id, archived=lead.is_archived, include_add_phone=lead.phone is None, _=_))
+        await lead_service.get_lead(session, callback.from_user.id, lead_id)
+    await _edit_or_answer(callback, _("Choose the new lead source."), build_source_keyboard("edit:source", lead_id, _=_))
 
 
-@router.callback_query(F.data.startswith("edit:status:"))
+@router.callback_query(F.data.startswith("fz:"))
 async def crm_edit_status(callback: CallbackQuery, sessionmaker) -> None:
     await crm_status_menu(callback, sessionmaker)
 
 
-@router.callback_query(F.data.startswith("edit:rem:"))
+@router.callback_query(F.data.startswith("fr:"))
 async def crm_edit_rem(callback: CallbackQuery, sessionmaker) -> None:
     await crm_reminder_menu(callback, sessionmaker)
 

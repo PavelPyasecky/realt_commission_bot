@@ -67,7 +67,10 @@ class Announcement(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     body_html = Column(Text, nullable=False)
+    body_plain = Column(Text, nullable=True)
     scheduled_at = Column(DateTime(timezone=True), nullable=False, index=True)
     created_by_user_id = Column(BigInteger, nullable=False)
     sent_at = Column(DateTime(timezone=True), nullable=True)
+    state = Column(String(16), nullable=False, default="pending", server_default=text("'pending'"), index=True)
+    error_message = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
