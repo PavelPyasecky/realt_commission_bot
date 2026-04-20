@@ -115,7 +115,7 @@ def build_reminder_keyboard(prefix="create:rem", lead_id=None, _=None):
         if lead_id is None:
             callback = f"cq:{value}"
         else:
-            callback = f"mq:{_lid(lead_id)}:{value}"
+            callback = f"qq:{_lid(lead_id)}:{value}"
         rows.append([InlineKeyboardButton(text=_(label), callback_data=callback)])
     rows.append([InlineKeyboardButton(text=_("Back to CRM"), callback_data="crm:menu")])
     return InlineKeyboardMarkup(inline_keyboard=rows)

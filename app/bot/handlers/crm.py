@@ -519,7 +519,7 @@ async def crm_reminder_menu(callback: CallbackQuery, sessionmaker) -> None:
     await _edit_or_answer(callback, _("Choose the reminder time."), build_reminder_keyboard("lead:remset", lead_id, _=_))
 
 
-@router.callback_query(F.data.startswith("mq:"))
+@router.callback_query(F.data.startswith("qq:"))
 async def crm_set_reminder(callback: CallbackQuery, sessionmaker) -> None:
     _ = get_translator()
     _, b36, preset = callback.data.split(":", 2)

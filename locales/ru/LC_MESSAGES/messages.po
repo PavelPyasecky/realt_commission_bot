@@ -471,6 +471,9 @@ msgstr "➕ Новая рассылка"
 msgid "Broadcast close menu"
 msgstr "✖ Закрыть"
 
+msgid "Broadcast home"
+msgstr "⬅ Рассылки: меню"
+
 msgid "Broadcast back home"
 msgstr "⬅ В меню"
 

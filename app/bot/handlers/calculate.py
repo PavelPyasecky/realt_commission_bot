@@ -5,7 +5,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from app.bot.handlers.announcements import BroadcastFlow, open_broadcast_menu
+from app.bot.handlers.announcements import BroadcastFlow, is_broadcast_reply_button_text, open_broadcast_menu
 
 from app.core.config import config
 from app.services import exceptions
@@ -203,6 +203,8 @@ async def calculate(message, sessionmaker, state: FSMContext):
         return
     _ = get_translator()
     text = (message.text or "").strip()
+    if is_broadcast_reply_button_text(text):
+        return
     is_admin = _is_admin(
         chat_id=message.chat.id if message.chat else None,
         user_id=message.from_user.id if message.from_user else None,
