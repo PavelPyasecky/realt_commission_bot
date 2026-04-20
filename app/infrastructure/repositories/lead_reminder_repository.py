@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import select
 
-from app.infrastructure.database.models import LeadReminder
+from app.infrastructure.database.models import Lead, LeadReminder
 
 
 def _utc_now() -> datetime:
@@ -59,3 +59,27 @@ class LeadReminderRepository:
             )
         )
         return result.scalar_one_or_none()
+
+    async def list_due_for_delivery(self, session, *, now: datetime, limit: int) -> list[LeadReminder]:
+        stmt = (
+            select(LeadReminder)
+            .where(
+                LeadReminder.is_active.is_(True),
+                LeadReminder.sent_at.is_(None),
+                LeadReminder.scheduled_at <= now,
+            )
+            .order_by(LeadReminder.scheduled_at.asc(), LeadReminder.id.asc())
+            .limit(limit)
+        )
+        result = await session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def mark_delivered(self, session, reminder_id: int) -> None:
+        now = _utc_now()
+        record = await session.get(LeadReminder, reminder_id)
+        if record is None:
+            return
+        record.is_active = False
+        record.sent_at = now
+        record.updated_at = now
+        await session.flush()

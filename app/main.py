@@ -17,6 +17,7 @@ from app.bot.middlewares.user_activity import UserActivityMiddleware
 from app.infrastructure.database.models import Base
 from app.infrastructure.database.session import create_engine, create_sessionmaker
 from app.tasks.currency import update_usd_rate
+from app.tasks.reminder_delivery import reminder_delivery_loop
 from aiogram.exceptions import TelegramNetworkError
 
 
@@ -99,8 +100,19 @@ async def stack_shutdown(
 
 
 async def _run_polling(app_ctx: ApplicationContext) -> None:
+    reminder_task = None
     try:
         await stack_startup(app_ctx)
+        cfg = app_ctx.config
+        reminder_task = asyncio.create_task(
+            reminder_delivery_loop(
+                app_ctx.bot,
+                app_ctx.sessionmaker,
+                cfg.REMINDER_DELIVERY_INTERVAL_SECONDS,
+                cfg.REMINDER_DELIVERY_BATCH,
+            ),
+            name="reminder_delivery",
+        )
         logger.info("Bot started via polling")
         if not app_ctx.dp:
             raise RuntimeError("Dispatcher not initialized")
@@ -119,6 +131,12 @@ async def _run_polling(app_ctx: ApplicationContext) -> None:
                 )
                 await asyncio.sleep(STARTUP_RETRY_DELAY_SECONDS)
     finally:
+        if reminder_task:
+            reminder_task.cancel()
+            try:
+                await reminder_task
+            except asyncio.CancelledError:
+                pass
         await stack_shutdown(app_ctx, stop_polling=True, close_bot_session=True)
 
 
@@ -138,6 +156,7 @@ async def _run_webhook(app_ctx: ApplicationContext) -> None:
     handler = None
     runner = None
     site = None
+    reminder_task = None
     try:
         await stack_startup(app_ctx)
 
@@ -170,9 +189,25 @@ async def _run_webhook(app_ctx: ApplicationContext) -> None:
             drop_pending_updates=cfg.WEBHOOK_DROP_PENDING_ON_SET,
         )
 
+        reminder_task = asyncio.create_task(
+            reminder_delivery_loop(
+                app_ctx.bot,
+                app_ctx.sessionmaker,
+                cfg.REMINDER_DELIVERY_INTERVAL_SECONDS,
+                cfg.REMINDER_DELIVERY_BATCH,
+            ),
+            name="reminder_delivery",
+        )
+
         logger.info("Webhook server listening on %s:%s%s", cfg.WEBHOOK_HOST, cfg.WEBHOOK_PORT, path)
         await asyncio.Future()
     finally:
+        if reminder_task:
+            reminder_task.cancel()
+            try:
+                await reminder_task
+            except asyncio.CancelledError:
+                pass
         if cfg.WEBHOOK_DELETE_ON_SHUTDOWN and app_ctx.bot:
             try:
                 await app_ctx.bot.delete_webhook(drop_pending_updates=False)

@@ -401,3 +401,6 @@ msgstr "Последний контакт"
 
 msgid "Back to CRM"
 msgstr "Назад в CRM"
+
+msgid "Lead reminder title"
+msgstr "Напоминание о звонке"
