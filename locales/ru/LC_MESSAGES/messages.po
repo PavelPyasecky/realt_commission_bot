@@ -380,3 +380,24 @@ msgstr "На следующей неделе"
 
 msgid "Lead reminder none"
 msgstr "Без напоминания"
+
+msgid "Lead card phone"
+msgstr "Телефон"
+
+msgid "Lead card type"
+msgstr "Тип"
+
+msgid "Lead card source"
+msgstr "Источник"
+
+msgid "Lead card status"
+msgstr "Статус"
+
+msgid "Lead card next call"
+msgstr "Следующий звонок"
+
+msgid "Lead card last contact"
+msgstr "Последний контакт"
+
+msgid "Back to CRM"
+msgstr "Назад в CRM"
