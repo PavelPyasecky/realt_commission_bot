@@ -5,7 +5,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from app.bot.handlers.announcements import BroadcastFlow, is_broadcast_reply_button_text, open_broadcast_menu
+from app.bot.handlers.announcements import is_broadcast_reply_button_text, open_broadcast_menu
 
 from app.core.config import config
 from app.services import exceptions
@@ -193,14 +193,6 @@ async def compare_command(message):
 
 @router.message(F.text)
 async def calculate(message, sessionmaker, state: FSMContext):
-    st = await state.get_state()
-    if st in (
-        BroadcastFlow.schedule.state,
-        BroadcastFlow.body.state,
-        BroadcastFlow.edit_schedule.state,
-        BroadcastFlow.edit_body.state,
-    ):
-        return
     _ = get_translator()
     text = (message.text or "").strip()
     if is_broadcast_reply_button_text(text):

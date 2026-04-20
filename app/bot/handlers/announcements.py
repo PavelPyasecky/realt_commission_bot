@@ -5,7 +5,8 @@ import re
 from datetime import datetime
 
 from aiogram import F, Router
-from aiogram.filters import Command
+from aiogram.dispatcher.event.bases import SkipHandler
+from aiogram.filters import BaseFilter, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
@@ -17,6 +18,7 @@ from app.bot.keyboards.broadcast import (
     build_broadcast_reply_keyboard,
 )
 from app.bot.keyboards.calculate import build_main_keyboard
+from app.bot.reply_menu_labels import main_and_crm_menu_texts
 from app.core.config import config
 from app.infrastructure.database.transaction import managed_session
 from app.infrastructure.repositories.announcement_repository import AnnouncementRepository
@@ -166,14 +168,18 @@ def is_broadcast_reply_button_text(text: str) -> bool:
     return (text or "").strip() in broadcast_reply_button_texts()
 
 
-@router.message(F.text)
+class BroadcastReplyMenuFilter(BaseFilter):
+    async def __call__(self, message: Message) -> bool:
+        if not _is_admin(message.from_user.id if message.from_user else None, message.chat.id if message.chat else None):
+            return False
+        text = (message.text or "").strip()
+        return is_broadcast_reply_button_text(text)
+
+
+@router.message(BroadcastReplyMenuFilter())
 async def broadcast_reply_menu(message: Message, state: FSMContext, sessionmaker) -> None:
     _ = get_translator()
-    if not _is_admin(message.from_user.id if message.from_user else None, message.chat.id if message.chat else None):
-        return
     text = (message.text or "").strip()
-    if not is_broadcast_reply_button_text(text):
-        return
     st = await state.get_state()
     in_flow = st in (
         BroadcastFlow.schedule.state,
@@ -184,14 +190,6 @@ async def broadcast_reply_menu(message: Message, state: FSMContext, sessionmaker
     if in_flow and text == _("Broadcast home"):
         await state.clear()
         await open_broadcast_menu(message, state)
-        return
-    if in_flow and text not in (
-        _("Broadcast home"),
-        _("Broadcast list pending"),
-        _("Broadcast list failed"),
-        _("Broadcast list sent"),
-        _("Broadcast new"),
-    ):
         return
 
     if text == _("Broadcast new"):
@@ -346,6 +344,9 @@ async def on_schedule(message: Message, state: FSMContext) -> None:
         await state.clear()
         await message.answer(_("Access denied."))
         return
+    text = (message.text or "").strip()
+    if text in main_and_crm_menu_texts(_):
+        raise SkipHandler()
     try:
         when = _parse_schedule((message.text or "").strip())
     except ValueError:
@@ -364,6 +365,8 @@ async def on_body(message: Message, state: FSMContext, sessionmaker) -> None:
         await message.answer(_("Access denied."))
         return
     raw = (message.text or "").strip()
+    if raw in main_and_crm_menu_texts(_):
+        raise SkipHandler()
     if not raw:
         await message.answer(_("Announce body empty"))
         return
@@ -400,6 +403,8 @@ async def on_edit_schedule(message: Message, state: FSMContext, sessionmaker) ->
         await state.clear()
         await message.answer(_("Access denied."))
         return
+    if (message.text or "").strip() in main_and_crm_menu_texts(_):
+        raise SkipHandler()
     aid = (await state.get_data()).get("edit_announcement_id")
     if not aid:
         await state.clear()
@@ -428,6 +433,8 @@ async def on_edit_body(message: Message, state: FSMContext, sessionmaker) -> Non
         return
     aid = (await state.get_data()).get("edit_announcement_id")
     raw = (message.text or "").strip()
+    if raw in main_and_crm_menu_texts(_):
+        raise SkipHandler()
     if not aid or not raw:
         await message.answer(_("Announce body empty"))
         return
