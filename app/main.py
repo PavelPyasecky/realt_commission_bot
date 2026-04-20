@@ -17,6 +17,7 @@ from app.bot.middlewares.user_activity import UserActivityMiddleware
 from app.infrastructure.database.models import Base
 from app.infrastructure.database.session import create_engine, create_sessionmaker
 from app.tasks.currency import update_usd_rate
+from app.tasks.announcement_delivery import announcement_delivery_loop
 from app.tasks.reminder_delivery import reminder_delivery_loop
 from aiogram.exceptions import TelegramNetworkError
 
@@ -101,6 +102,7 @@ async def stack_shutdown(
 
 async def _run_polling(app_ctx: ApplicationContext) -> None:
     reminder_task = None
+    announcement_task = None
     try:
         await stack_startup(app_ctx)
         cfg = app_ctx.config
@@ -112,6 +114,15 @@ async def _run_polling(app_ctx: ApplicationContext) -> None:
                 cfg.REMINDER_DELIVERY_BATCH,
             ),
             name="reminder_delivery",
+        )
+        announcement_task = asyncio.create_task(
+            announcement_delivery_loop(
+                app_ctx.bot,
+                app_ctx.sessionmaker,
+                cfg.ANNOUNCEMENT_DELIVERY_INTERVAL_SECONDS,
+                cfg.ANNOUNCEMENT_DELIVERY_BATCH,
+            ),
+            name="announcement_delivery",
         )
         logger.info("Bot started via polling")
         if not app_ctx.dp:
@@ -137,6 +148,12 @@ async def _run_polling(app_ctx: ApplicationContext) -> None:
                 await reminder_task
             except asyncio.CancelledError:
                 pass
+        if announcement_task:
+            announcement_task.cancel()
+            try:
+                await announcement_task
+            except asyncio.CancelledError:
+                pass
         await stack_shutdown(app_ctx, stop_polling=True, close_bot_session=True)
 
 
@@ -157,6 +174,7 @@ async def _run_webhook(app_ctx: ApplicationContext) -> None:
     runner = None
     site = None
     reminder_task = None
+    announcement_task = None
     try:
         await stack_startup(app_ctx)
 
@@ -198,6 +216,15 @@ async def _run_webhook(app_ctx: ApplicationContext) -> None:
             ),
             name="reminder_delivery",
         )
+        announcement_task = asyncio.create_task(
+            announcement_delivery_loop(
+                app_ctx.bot,
+                app_ctx.sessionmaker,
+                cfg.ANNOUNCEMENT_DELIVERY_INTERVAL_SECONDS,
+                cfg.ANNOUNCEMENT_DELIVERY_BATCH,
+            ),
+            name="announcement_delivery",
+        )
 
         logger.info("Webhook server listening on %s:%s%s", cfg.WEBHOOK_HOST, cfg.WEBHOOK_PORT, path)
         await asyncio.Future()
@@ -206,6 +233,12 @@ async def _run_webhook(app_ctx: ApplicationContext) -> None:
             reminder_task.cancel()
             try:
                 await reminder_task
+            except asyncio.CancelledError:
+                pass
+        if announcement_task:
+            announcement_task.cancel()
+            try:
+                await announcement_task
             except asyncio.CancelledError:
                 pass
         if cfg.WEBHOOK_DELETE_ON_SHUTDOWN and app_ctx.bot:

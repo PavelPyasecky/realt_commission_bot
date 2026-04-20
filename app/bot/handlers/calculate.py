@@ -2,7 +2,10 @@ from html import escape
 
 from aiogram import F, Router
 from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
+
+from app.bot.handlers.announcements import AnnounceFlow, start_announce_flow
 
 from app.core.config import config
 from app.services import exceptions
@@ -164,6 +167,7 @@ def _action_texts(_):
         _("Favorites"),
         _("Compare scenarios"),
         _("User statistics"),
+        _("Admin broadcast"),
     }
 
 
@@ -188,7 +192,10 @@ async def compare_command(message):
 
 
 @router.message(F.text)
-async def calculate(message, sessionmaker):
+async def calculate(message, sessionmaker, state: FSMContext):
+    st = await state.get_state()
+    if st in (AnnounceFlow.schedule.state, AnnounceFlow.body.state):
+        return
     _ = get_translator()
     text = (message.text or "").strip()
     is_admin = _is_admin(
@@ -220,6 +227,9 @@ async def calculate(message, sessionmaker):
         return
     if text == _("User statistics"):
         await _send_stats_message(message, sessionmaker, _)
+        return
+    if is_admin and text == _("Admin broadcast"):
+        await start_announce_flow(message, state)
         return
 
     if text in _action_texts(_):

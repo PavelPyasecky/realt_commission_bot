@@ -45,6 +45,10 @@ class Settings:
         self.WEBHOOK_DELETE_ON_SHUTDOWN = os.environ.get("WEBHOOK_DELETE_ON_SHUTDOWN", "1") not in ("0", "false", "False")
         self.REMINDER_DELIVERY_INTERVAL_SECONDS = float(os.environ.get("REMINDER_DELIVERY_INTERVAL_SECONDS", "30"))
         self.REMINDER_DELIVERY_BATCH = int(os.environ.get("REMINDER_DELIVERY_BATCH", "25"))
+        self.ANNOUNCEMENT_TIMEZONE = os.environ.get("ANNOUNCEMENT_TIMEZONE", "Europe/Minsk")
+        self.ANNOUNCEMENT_DELIVERY_INTERVAL_SECONDS = float(os.environ.get("ANNOUNCEMENT_DELIVERY_INTERVAL_SECONDS", "15"))
+        self.ANNOUNCEMENT_DELIVERY_BATCH = int(os.environ.get("ANNOUNCEMENT_DELIVERY_BATCH", "5"))
+        self.ANNOUNCEMENT_SEND_DELAY_SECONDS = float(os.environ.get("ANNOUNCEMENT_SEND_DELAY_SECONDS", "0.05"))
 
     def webhook_public_url(self) -> str:
         if self.WEBHOOK_URL:

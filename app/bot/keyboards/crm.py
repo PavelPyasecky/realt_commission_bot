@@ -108,7 +108,7 @@ def build_status_keyboard(lead_id, _=None):
     from app.services.crm_options import STATUS_LABELS
 
     rows = [
-        [InlineKeyboardButton(text=_(label), callback_data=f"status:set:{lead_id}:{value}")]
+        [InlineKeyboardButton(text=_(label), callback_data=f"st:{lead_id}:{value}")]
         for value, label in STATUS_LABELS.items()
     ]
     rows.append([InlineKeyboardButton(text=_("Back"), callback_data=f"lead:open:{lead_id}")])

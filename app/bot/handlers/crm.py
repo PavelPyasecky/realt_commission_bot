@@ -9,6 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 
+from app.bot.handlers.announcements import AnnounceFlow
 from app.bot.keyboards import build_crm_menu_keyboard, build_main_keyboard
 from app.bot.keyboards.crm import (
     build_duplicate_keyboard,
@@ -130,6 +131,9 @@ async def crm_root(message: Message, state: FSMContext) -> None:
 
 @router.message(_is_crm_menu_message)
 async def crm_menu_buttons(message: Message, state: FSMContext, sessionmaker) -> None:
+    st = await state.get_state()
+    if st in (AnnounceFlow.schedule.state, AnnounceFlow.body.state):
+        return
     _ = get_translator()
     text = (message.text or "").strip()
 
@@ -473,10 +477,10 @@ async def crm_status_menu(callback: CallbackQuery, sessionmaker) -> None:
     await _edit_or_answer(callback, _("Choose the new status."), build_status_keyboard(lead_id, _=_))
 
 
-@router.callback_query(F.data.startswith("status:set:"))
+@router.callback_query(F.data.startswith("st:"))
 async def crm_set_status(callback: CallbackQuery, sessionmaker) -> None:
     _ = get_translator()
-    _, _, lead_id, status = callback.data.split(":")
+    _, lead_id, status = callback.data.split(":", 2)
     async with managed_session(sessionmaker) as session:
         lead = await lead_service.update_status(session, callback.from_user.id, int(lead_id), status)
     await _edit_or_answer(callback, _format_lead_card(lead, _), build_lead_card_keyboard(lead.id, archived=lead.is_archived, include_add_phone=lead.phone is None, _=_))

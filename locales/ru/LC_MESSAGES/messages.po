@@ -405,6 +405,27 @@ msgstr "Назад в CRM"
 msgid "Lead reminder title"
 msgstr "Напоминание о звонке"
 
+msgid "Admin broadcast"
+msgstr "📣 Рассылка"
+
+msgid "Announce schedule prompt"
+msgstr "Укажите дату и время отправки в часовом поясе {tz}.\nФормат: ГГГГ-ММ-ДД ЧЧ:ММ\nПример: 2026-04-25 14:30"
+
+msgid "Announce schedule invalid"
+msgstr "Неверный формат. Используйте: ГГГГ-ММ-ДД ЧЧ:ММ (например, 2026-04-25 14:30)"
+
+msgid "Announce body prompt"
+msgstr "Отправьте текст анонса одним сообщением (будет отправлен всем пользователям из базы)."
+
+msgid "Announce body empty"
+msgstr "Текст пустой. Отправьте непустое сообщение."
+
+msgid "Announce message title"
+msgstr "Новости бота"
+
+msgid "Announce scheduled ok"
+msgstr "Рассылка #{id} запланирована на {when}. После отправки она не повторится."
+
 msgid "Stats page counter"
 msgstr "{page} из {total}"
 

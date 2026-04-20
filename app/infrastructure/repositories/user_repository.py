@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
@@ -51,3 +51,13 @@ class UserRepository:
         )
         result = await session.execute(stmt)
         return list(result.scalars().all())
+
+    async def list_tg_ids_batch(self, session, *, limit: int, offset: int) -> list[int]:
+        stmt = (
+            select(User.tg_id)
+            .order_by(User.tg_id.asc())
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await session.execute(stmt)
+        return [int(x) for x in result.scalars().all()]

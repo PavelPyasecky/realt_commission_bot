@@ -19,7 +19,12 @@ def build_main_keyboard(_, is_admin=False):
         [KeyboardButton(text=_("Compare scenarios"))],
     ]
     if is_admin:
-        keyboard.append([KeyboardButton(text=_("User statistics"))])
+        keyboard.append(
+            [
+                KeyboardButton(text=_("User statistics")),
+                KeyboardButton(text=_("Admin broadcast")),
+            ]
+        )
     return ReplyKeyboardMarkup(
         keyboard=keyboard,
         resize_keyboard=True,
