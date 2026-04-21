@@ -4,6 +4,7 @@ from dataclasses import asdict
 from datetime import datetime
 
 from aiogram import F, Router
+from aiogram.dispatcher.event.bases import SkipHandler
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -146,6 +147,8 @@ async def crm_root(message: Message, state: FSMContext) -> None:
 
 @router.message(_is_crm_menu_message)
 async def crm_menu_buttons(message: Message, state: FSMContext, sessionmaker) -> None:
+    _ = get_translator()
+    text = (message.text or "").strip()
     st = await state.get_state()
     if st in (
         BroadcastFlow.schedule.state,
@@ -153,9 +156,11 @@ async def crm_menu_buttons(message: Message, state: FSMContext, sessionmaker) ->
         BroadcastFlow.edit_schedule.state,
         BroadcastFlow.edit_body.state,
     ):
-        return
-    _ = get_translator()
-    text = (message.text or "").strip()
+        if text == _("Back to main menu"):
+            await state.clear()
+            await message.answer(_("Welcome message"), reply_markup=build_main_keyboard(_, is_admin=_is_admin(message)))
+            return
+        raise SkipHandler()
 
     if text == _("CRM"):
         await _show_crm_root(message, state, _)
