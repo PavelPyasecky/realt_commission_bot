@@ -1,6 +1,7 @@
 from html import escape
 
 from aiogram import F, Router
+from aiogram.dispatcher.event.bases import SkipHandler
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
@@ -196,7 +197,7 @@ async def calculate(message, sessionmaker, state: FSMContext):
     _ = get_translator()
     text = (message.text or "").strip()
     if is_broadcast_reply_button_text(text):
-        return
+        raise SkipHandler()
     is_admin = _is_admin(
         chat_id=message.chat.id if message.chat else None,
         user_id=message.from_user.id if message.from_user else None,
