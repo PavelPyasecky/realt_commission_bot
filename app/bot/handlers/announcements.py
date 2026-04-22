@@ -6,7 +6,7 @@ from datetime import datetime
 
 from aiogram import F, Router
 from aiogram.dispatcher.event.bases import SkipHandler
-from aiogram.filters import BaseFilter, Command
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
@@ -163,18 +163,15 @@ def is_broadcast_reply_button_text(text: str) -> bool:
     return (text or "").strip() in broadcast_reply_button_texts()
 
 
-class BroadcastReplyMenuFilter(BaseFilter):
-    async def __call__(self, message: Message) -> bool:
-        if not _is_admin(message.from_user.id if message.from_user else None, message.chat.id if message.chat else None):
-            return False
-        text = (message.text or "").strip()
-        return is_broadcast_reply_button_text(text)
-
-
-@router.message(BroadcastReplyMenuFilter())
-async def broadcast_reply_menu(message: Message, state: FSMContext, sessionmaker) -> None:
-    _ = get_translator()
+async def _try_handle_broadcast_reply_menu(
+    message: Message, state: FSMContext, sessionmaker
+) -> bool:
+    if not _is_admin(message.from_user.id if message.from_user else None, message.chat.id if message.chat else None):
+        return False
     text = (message.text or "").strip()
+    if not is_broadcast_reply_button_text(text):
+        return False
+    _ = get_translator()
     st = await state.get_state()
     in_flow = st in (
         BroadcastFlow.schedule.state,
@@ -185,23 +182,31 @@ async def broadcast_reply_menu(message: Message, state: FSMContext, sessionmaker
     if in_flow and text == _("Broadcast home"):
         await state.clear()
         await open_broadcast_menu(message, state)
-        return
+        return True
 
     if text == _("Broadcast new"):
         await start_new_broadcast(message, state)
-        return
+        return True
     if text == _("Broadcast list pending"):
         await state.clear()
         await _send_list_message(message, sessionmaker, "pending", 0)
-        return
+        return True
     if text == _("Broadcast list failed"):
         await state.clear()
         await _send_list_message(message, sessionmaker, "failed", 0)
-        return
+        return True
     if text == _("Broadcast list sent"):
         await state.clear()
         await _send_list_message(message, sessionmaker, "sent", 0)
+        return True
+    return False
+
+
+@router.message(F.text)
+async def broadcast_reply_menu_first(message: Message, state: FSMContext, sessionmaker) -> None:
+    if await _try_handle_broadcast_reply_menu(message, state, sessionmaker):
         return
+    raise SkipHandler()
 
 
 def _list_page_from_callback(data: str) -> int:
