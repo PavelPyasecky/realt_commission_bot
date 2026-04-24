@@ -127,11 +127,11 @@ def build_edit_menu_keyboard(lead_id, _=None):
         inline_keyboard=[
             [
                 InlineKeyboardButton(text=_("Lead name"), callback_data=f"fn:{b}"),
-                InlineKeyboardButton(text=_("Lead phone"), callback_data=f"fp:{b}"),
+                InlineKeyboardButton(text=_("Lead phone"), callback_data=f"p:{b}"),
             ],
             [
-                InlineKeyboardButton(text=_("Lead type"), callback_data=f"ft:{b}"),
-                InlineKeyboardButton(text=_("Lead source"), callback_data=f"fs:{b}"),
+                InlineKeyboardButton(text=_("Lead type"), callback_data=f"yt:{b}"),
+                InlineKeyboardButton(text=_("Lead source"), callback_data=f"yf:{b}"),
             ],
             [
                 InlineKeyboardButton(text=_("Lead status"), callback_data=f"fz:{b}"),
